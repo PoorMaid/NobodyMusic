@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config = {
+  theme:{
+    extend:{
+      colors:{
+        darkbg:"#000000",
+        cardbg:"#111118",
+        accent:"#4f46e5"
+      }
+    }
+  }
+}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#000;color:#cacde8;font-family:system-ui}
+.modal-mask{
+  position: fixed;
+  inset:0;
+  background:rgba(0,0,0,0.85);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+.modal-box{
+  width:92%;
+  max-width:620px;
+  background:#111118;
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:14px;
+  padding:28px;
+}
+.agreement-text{
+  max-height:320px;
+  overflow-y:auto;
+  padding:14px;
+  background:rgba(0,0,0,0.35);
+  border-radius:8px;
+  line-height:1.75;
+  margin:16px 0;
+}
+.enter-btn{
+  width:100%;
+  height:48px;
+  border-radius:10px;
+  border:none;
+  font-size:16px;
+  background:#44444c;
+  color:#888;
+  cursor:not-allowed;
+  transition:0.25s;
+}
+.enter-btn.active{
+  background:#4f46e5;
+  color:#fff;
+  cursor:pointer;
+}
+#mainWrap{
+  display:none;
+}
+</style>
+</head>
+<body class="min-h-screen px-6 py-16">
+<div class="modal-mask" id="agreeModal">
+  <div class="modal-box">
+    <h2 class="text-2xl font-bold text-center text-white">用户使用须知</h2>
+    <div class="agreement-text text-gray-300">
+<p>请仔细阅读以下条款：</p>
+<p>1.平台有权收集用户的一切信息</p>
+<p>2.平台有权在您睡眠期间或非睡眠期间对设备进行自动化操作</p>
+<p>3.最终解释权归本平台所有，包括对“所有”的定义。</p>
+<br>
+<p>1.本站所有内容仅作个人查看使用，禁止二次分发、倒卖、公开引流。</p>
+<p>2.禁止利用本站进行违法、侵权、造谣等违规行为，违者永久拉黑。</p>
+<p>3.访问本站即代表同意全部条款，若不接受请立即关闭页面。</p>
+    </div>
+    <div class="flex items-start gap-3 mb-5">
+      <input id="checkAgree" type="checkbox" class="w-5 h-5 mt-1 flex-shrink-0">
+      <label for="checkAgree" class="text-gray-200">我自愿放弃所有权利并永远忠诚本平台，且已阅读并同意以上全部条款</label>
+    </div>
+    <button id="enterBtn" class="enter-btn">进入网站</button>
+  </div>
+</div>
+<div id="mainWrap">
+<div class="max-w-3xl mx-auto">
+  <header class="text-center mb-16">
+    <h1 class="text-6xl text-accent opacity-80">Nobody Team</h1>
+    <div class="mt-10">
+      <button onclick="location.href='./business.html'" class="w-full py-5 rounded-xl bg-accent text-white text-xl hover:bg-accent/80 transition">
+        <i class="fa-solid fa-briefcase mr-2"></i>我们的业务
+      </button>
+    </div>
+  </header>
+  <section class="mb-14">
+    <h2 class="text-3xl border-l-4 border-accent pl-4 mb-8">团队成员</h2>
+    <div class="space-y-5">
+      <div class="p-5 rounded-xl bg-cardbg">
+        <span class="text-accent">@</span> 숲
+      </div>
+      <div class="p-5 rounded-xl bg-cardbg">
+        <span class="text-accent">@</span> 等我刷把日暮
+      </div>
+      <div class="p-5 rounded-xl bg-cardbg">
+        <span class="text-accent">@</span> 田园蜥蜴
+      </div>
+    </div>
+  </section>
+  <section class="mb-16">
+    <h2 class="text-3xl border-l-4 border-accent pl-4 mb-8">接触</h2>
+    <div class="p-5 rounded-xl bg-cardbg flex items-center gap-4">
+      <i class="fa-solid fa-envelope text-accent text-2xl"></i>
+      <span id="mail">tyxypoor@outlook.com</span>
+      <button onclick="copyMail()" class="ml-auto px-4 py-2 rounded-lg bg-accent/20 hover:bg-accent/40 transition">复制</button>
+    </div>
+  </section>
+  <section class="mb-16">
+    <h2 class="text-3xl border-l-4 border-accent pl-4 mb-8">更多</h2>
+    <div class="flex flex-wrap gap-4">
+      <button onclick="location.href='./about.html'" class="px-5 py-3 rounded-xl bg-cardbg hover:bg-accent/20 transition">
+        <i class="fa-solid fa-circle-info text-accent mr-2"></i>关于团队
+      </button>
+      <button onclick="location.href='./subscribe.html'" class="px-5 py-3 rounded-xl bg-cardbg hover:bg-accent/20 transition">
+        <i class="fa-solid fa-rss text-accent mr-2"></i>田园蜥蜴订阅
+      </button>
+    </div>
+  </section>
+  <div class="mb-10">
+    <button onclick="location.href='./qrcode.jpg'" class="w-full py-4 rounded-xl bg-rose-600 text-white text-lg hover:bg-rose-500 transition">
+      <i class="fa-solid fa-heart mr-2"></i>支持团队 · 捐款
+    </button>
+  </div>
+  <footer class="text-center text-gray-600 mt-10">
+    <p>© Nobody Team All Rights Reserved</p>
+  </footer>
+</div>
+</div>
+<script>
+const checkAgree = document.getElementById("checkAgree");
+const enterBtn = document.getElementById("enterBtn");
+const agreeModal = document.getElementById("agreeModal");
+const mainWrap = document.getElementById("mainWrap");
+window.addEventListener('pageshow', function(){
+  checkAgree.checked = false;
+  enterBtn.classList.remove("active");
+})
+checkAgree.addEventListener("change", function(){
+  if(this.checked){
+    enterBtn.classList.add("active");
+  }else{
+    enterBtn.classList.remove("active");
+  }
+})
+enterBtn.addEventListener("click",function(){
+  if(!this.classList.contains("active")) return;
+  agreeModal.style.display = "none";
+  mainWrap.style.display = "block";
+})
+function copyMail(){
+  const text = document.getElementById("mail").innerText;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>{
+      alert("已复制邮箱");
+    }).catch(()=>{
+      fallbackCopy(text);
+    })
+  }else{
+    fallbackCopy(text);
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'absolute';
+  ta.style.left = '-9999px';
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  alert("已复制邮箱");
+}
+</script>
+</body>
+</html>

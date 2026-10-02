@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nobody</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+body {
+  min-height: 100vh;
+  background-color: #f7f9fc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+}
+#cannonCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  pointer-events: none;
+}
+.container {
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  z-index: 10;
+}
+.shortcut-wrap {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  z-index: 10;
+}
+.shortcut-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+  transition: 0.2s;
+}
+.shortcut-item:hover {
+  opacity: 0.7;
+}
+.shortcut-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #eef2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+.shortcut-text {
+  font-size: 12px;
+}
+.search-box-wrap {
+  margin-top: 120px;
+  position: relative;
+  text-align: center;
+}
+.title-text {
+  font-size: 48px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #222;
+}
+.search-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 60px 0 20px;
+  font-size: 18px;
+  border: none;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  outline: none;
+}
+.search-input:focus {
+  box-shadow: 0 2px 16px rgba(0,0,0,0.1);
+}
+.search-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: #4080ff;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.search-btn:hover {
+  background: #3366dd;
+}
+.footer-text {
+  position: absolute;
+  bottom: 16px;
+  font-size: 11px;
+  color: #999;
+  z-index: 10;
+}
+@media (max-width: 720px) {
+  .shortcut-wrap {
+    top: 12px;
+    right: 12px;
+    gap: 8px;
+  }
+  .shortcut-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+  .shortcut-text {
+    font-size: 10px;
+  }
+}
+@media (max-width: 640px) {
+  .search-box-wrap {
+    margin-top: 100px;
+  }
+  .title-text {
+    font-size: 36px;
+  }
+}
+</style>
+</head>
+<body>
+<canvas id="cannonCanvas"></canvas>
+
+<div class="shortcut-wrap">
+  <a href="https://www.bilibili.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-play-circle"></i></div>
+    <div class="shortcut-text">B站</div>
+  </a>
+  <a href="https://www.douyin.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-music"></i></div>
+    <div class="shortcut-text">抖音</div>
+  </a>
+  <a href="https://wx.qq.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-weixin"></i></div>
+    <div class="shortcut-text">微信助手</div>
+  </a>
+  <a href="https://poki.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-gamepad"></i></div>
+    <div class="shortcut-text">宝玩游戏</div>
+  </a>
+  <a href="https://mcjs.link/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-cube"></i></div>
+    <div class="shortcut-text">网页MC</div>
+  </a>
+  <a href="index.html" class="shortcut-item">
+    <div class="shortcut-icon"><i class="fa fa-home"></i></div>
+    <div class="shortcut-text">我的官网</div>
+  </a>
+  <a href="https://v.qq.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-video-camera"></i></div>
+    <div class="shortcut-text">腾讯视频</div>
+  </a>
+  <a href="https://www.mgtv.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-television"></i></div>
+    <div class="shortcut-text">芒果TV</div>
+  </a>
+  <a href="https://yandex.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-search"></i></div>
+    <div class="shortcut-text">Yandex</div>
+  </a>
+  <a href="https://github.com/" class="shortcut-item" target="_blank">
+    <div class="shortcut-icon"><i class="fa fa-github"></i></div>
+    <div class="shortcut-text">Github</div>
+  </a>
+</div>
+
+<div class="container">
+  <div class="search-box-wrap">
+    <div class="title-text">Nobody</div>
+    <input type="text" class="search-input" id="searchInput" placeholder="输入搜索内容" autocomplete="off">
+    <button class="search-btn" id="searchBtn"><i class="fa fa-arrow-right"></i></button>
+  </div>
+</div>
+<div class="footer-text">by 田园蜥蜴</div>
+
+<script>
+const input = document.getElementById('searchInput');
+const btn = document.getElementById('searchBtn');
+function doSearch(){
+  const kw = input.value.trim();
+  if(kw){
+    window.location.href = `https://cn.bing.com/search?q=${encodeURIComponent(kw)}`;
+  }
+}
+btn.addEventListener('click', doSearch);
+input.addEventListener('keydown', function(e){
+  if(e.key === 'Enter') doSearch();
+});
+
+const canvas = document.getElementById("cannonCanvas");
+const ctx = canvas.getContext("2d");
+
+let width = 0;
+let height = 0;
+let dpr = Math.min(window.devicePixelRatio || 1, 2);
+let animId = null;
+let lastShot = 0;
+
+let balls = [];
+let sparks = [];
+
+let dragging = false;
+let dragWorld = {x:0,y:0};
+
+const rigid = {
+  cx:0, cy:0,
+  vx:0, vy:0,
+  angle:-Math.PI/2,
+  angVel:0,
+  massBase:0.4,
+  massTip:1.2,
+  gravity:0.32,
+  angDamp:0.986
+};
+
+const geo = {
+  p1LocalX:-14, p1LocalY:8,
+  p2LocalX:14, p2LocalY:8,
+  gripLocalX:0, gripLocalY:8,
+  tipLocalX:0, tipLocalY:-48,
+  ballR:22,
+  barrelLen:48
+};
+
+function resize() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + "px";
+  canvas.style.height = height + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+class Ball {
+  constructor(x,y,vx,vy,r=11){
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.radius = r;
+    this.dead = false;
+    this.gravity = 0.25;
+    this.drag = 0.997;
+    this.wigglePhase = Math.random() * Math.PI * 2;
+    this.trailNodes = [];
+    for(let i=0;i<24;i++) this.trailNodes.push({x,y});
+  }
+  update(){
+    this.wigglePhase += 0.22;
+    this.vy += this.gravity;
+    this.vx *= this.drag;
+    this.vy *= this.drag;
+    this.x += this.vx;
+    this.y += this.vy;
+    for(let i=this.trailNodes.length-1; i>0; i--){
+      this.trailNodes[i].x = this.trailNodes[i-1].x;
+      this.trailNodes[i].y = this.trailNodes[i-1].y;
+    }
+    this.trailNodes[0].x = this.x;
+    this.trailNodes[0].y = this.y;
+  }
+  draw(ctx){
+    const count = this.trailNodes.length;
+    for(let seg=1; seg<count; seg++){
+      const t0 = (seg-1)/count;
+      const t1 = seg/count;
+      const w0 = this.radius * (1 - t0*0.82);
+      const alpha0 = 1 - t0*0.72;
+      const p0 = this.trailNodes[seg-1];
+      const p1 = this.trailNodes[seg];
+      const amp0 = Math.sin(this.wigglePhase + (seg-1)*0.45)*(1-t0)*7;
+      const amp1 = Math.sin(this.wigglePhase + seg*0.45)*(1-t1)*7;
+      ctx.beginPath();
+      ctx.moveTo(p0.x+amp0, p0.y);
+      ctx.lineTo(p1.x+amp1, p1.y);
+      ctx.lineWidth = Math.max(0.4,w0);
+      ctx.strokeStyle = `rgba(255,210,34,${alpha0})`;
+      ctx.lineCap="round";
+      ctx.stroke();
+    }
+    ctx.fillStyle="#ffd222";
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+class Spark {
+  constructor(x,y,vx,vy){
+    this.x=x; this.y=y;
+    this.vx=vx; this.vy=vy;
+    this.life=20;
+  }
+  update(){
+    this.vx *=0.92;
+    this.vy *=0.92;
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life--;
+  }
+}
+
+function localToWorld(lx,ly){
+  const c = Math.cos(rigid.angle);
+  const s = Math.sin(rigid.angle);
+  return {
+    x: rigid.cx + lx*c - ly*s,
+    y: rigid.cy + lx*s + ly*c
+  };
+}
+
+function worldToLocal(wx,wy){
+  const c = Math.cos(-rigid.angle);
+  const s = Math.sin(-rigid.angle);
+  const dx = wx - rigid.cx;
+  const dy = wy - rigid.cy;
+  return { lx: dx*c - dy*s, ly: dx*s + dy*c };
+}
+
+function getSupportPoints(){
+  return {
+    p1: localToWorld(geo.p1LocalX, geo.p1LocalY),
+    p2: localToWorld(geo.p2LocalX, geo.p2LocalY)
+  };
+}
+
+function getGripWorld(){ return localToWorld(geo.gripLocalX, geo.gripLocalY); }
+function getMuzzleWorld(){ return localToWorld(geo.tipLocalX, geo.tipLocalY); }
+
+function initScene(){
+  balls=[]; sparks=[];
+  lastShot=performance.now();
+  rigid.cx = Math.max(120, width / 2);
+  rigid.cy = Math.max(260, height * 0.45);
+  rigid.vx = 0; rigid.vy = 0;
+  rigid.angle = -Math.PI/2;
+  rigid.angVel = 0;
+}
+
+function groundCollision(){
+  const groundY = height - 110;
+  const {p1,p2} = getSupportPoints();
+  const r = geo.ballR;
+  const bounce = 0.18;
+  const frictionAng = 0.86;
+
+  if(p1.y + r > groundY){
+    const penetrate = (p1.y + r) - groundY;
+    const loc = worldToLocal(p1.x,p1.y);
+    const c = Math.cos(rigid.angle);
+    const s = Math.sin(rigid.angle);
+    const rx = loc.lx*c - loc.ly*s;
+    const ry = loc.lx*s + loc.ly*c;
+    rigid.cy -= penetrate * 1.0;
+    const j = -(1+bounce)*rigid.vy;
+    rigid.vy += j;
+    const torque = rx * j;
+    rigid.angVel += torque / 320;
+  }
+  if(p2.y + r > groundY){
+    const penetrate = (p2.y + r) - groundY;
+    const loc = worldToLocal(p2.x,p2.y);
+    const c = Math.cos(rigid.angle);
+    const s = Math.sin(rigid.angle);
+    const rx = loc.lx*c - loc.ly*s;
+    const ry = loc.lx*s + loc.ly*c;
+    rigid.cy -= penetrate *1.0;
+    const j = -(1+bounce)*rigid.vy;
+    rigid.vy += j;
+    const torque = rx * j;
+    rigid.angVel += torque /320;
+  }
+  rigid.angVel *= frictionAng;
+}
+
+function constrainBoundary(){
+  const margin = 40;
+  if(rigid.cx < margin){ rigid.cx = margin; rigid.vx *=0.4; }
+  if(rigid.cx > width - margin){ rigid.cx = width - margin; rigid.vx *=0.4; }
+  if(rigid.cy < 180){ rigid.cy =180; rigid.vy *=0.4; }
+}
+
+function shoot(){
+  const mz = getMuzzleWorld();
+  const bulletSpeed = 6.2;
+  const baseDirX = Math.cos(rigid.angle);
+  const baseDirY = Math.sin(rigid.angle);
+  const fireX = baseDirY;
+  const fireY = -baseDirX;
+  const vx = fireX * bulletSpeed;
+  const vy = fireY * bulletSpeed;
+  balls.push(new Ball(mz.x, mz.y, vx, vy));
+  for(let i=0;i<10;i++){
+    const spread = (Math.random()-0.5)*0.8;
+    const a = Math.atan2(fireY, fireX) + spread;
+    const sp = 2+Math.random()*3.5;
+    sparks.push(new Spark(mz.x,mz.y, Math.cos(a)*sp, Math.sin(a)*sp));
+  }
+}
+
+function update(){
+  if(dragging){
+    const grip = getGripWorld();
+    const springK = 0.06;
+    const fx = (dragWorld.x - grip.x) * springK;
+    const fy = (dragWorld.y - grip.y) * springK;
+
+    const rx = grip.x - rigid.cx;
+    const ry = grip.y - rigid.cy;
+    const torque = rx * fy - ry * fx;
+
+    const totalMass = rigid.massBase + rigid.massTip;
+    rigid.vx += fx / totalMass;
+    rigid.vy += fy / totalMass;
+    rigid.angVel += torque / 350;
+
+    rigid.vx *=0.86;
+    rigid.vy *=0.86;
+    rigid.angVel *=0.94;
+  }else{
+    rigid.vy += rigid.gravity;
+  }
+
+  rigid.cx += rigid.vx;
+  rigid.cy += rigid.vy;
+  rigid.angle += rigid.angVel;
+  rigid.angVel *= rigid.angDamp;
+
+  groundCollision();
+  constrainBoundary();
+
+  for(const b of balls){
+    b.update();
+    if(b.x-b.radius<0){b.x=b.radius;b.vx*=-0.92;}
+    if(b.x+b.radius>width){b.x=width-b.radius;b.vx*=-0.92;}
+    if(b.y>height+40) b.dead=true;
+  }
+  balls = balls.filter(b=>!b.dead);
+
+  for(const s of sparks) s.update();
+  sparks = sparks.filter(s=>s.life>0);
+
+  const now = performance.now();
+  if(now-lastShot>520){
+    shoot();
+    lastShot = now;
+  }
+}
+
+function render(){
+  ctx.clearRect(0,0,width,height);
+  ctx.save();
+  ctx.translate(rigid.cx, rigid.cy);
+  ctx.rotate(rigid.angle);
+
+  ctx.fillStyle="#111";
+  ctx.beginPath();
+  ctx.arc(geo.p1LocalX, geo.p1LocalY, geo.ballR, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(geo.p2LocalX, geo.p2LocalY, geo.ballR, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle="#111";
+  ctx.fillRect(-8, -geo.barrelLen,16, geo.barrelLen);
+
+  ctx.fillStyle="#333";
+  ctx.beginPath();
+  ctx.arc(0, -geo.barrelLen, 12, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+
+  for(const b of balls) b.draw(ctx);
+  for(const s of sparks){
+    const a = Math.max(0, s.life/20);
+    ctx.fillStyle = `rgba(255,210,34,${a})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 1.5+a*1.8,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function loop(){
+  update();
+  render();
+  animId=requestAnimationFrame(loop);
+}
+
+initScene();
+loop();
+
+function getPt(e){
+  if(e.touches && e.touches.length>0){
+    return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  }
+  return {x:e.clientX, y:e.clientY};
+}
+
+function pointerDown(e){
+  const p = getPt(e);
+  const {p1,p2} = getSupportPoints();
+  const d1 = Math.hypot(p.x-p1.x, p.y-p1.y);
+  const d2 = Math.hypot(p.x-p2.x, p.y-p2.y);
+  if(d1 < geo.ballR+14 || d2 < geo.ballR+14){
+    dragging = true;
+    dragWorld.x = p.x;
+    dragWorld.y = p.y;
+    e.preventDefault();
+  }
+}
+function pointerMove(e){
+  if(!dragging) return;
+  const p = getPt(e);
+  dragWorld.x = p.x;
+  dragWorld.y = p.y;
+}
+function pointerUp(){
+  dragging = false;
+}
+
+document.addEventListener('mousedown',pointerDown);
+document.addEventListener('mousemove',pointerMove);
+document.addEventListener('mouseup',pointerUp);
+document.addEventListener('touchstart',pointerDown,{passive:false});
+document.addEventListener('touchmove',pointerMove,{passive:false});
+document.addEventListener('touchend',pointerUp);
+</script>
+</body>
+</html>
