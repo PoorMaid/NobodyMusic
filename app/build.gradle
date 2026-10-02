@@ -1,0 +1,130 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.plugin.serialization'
+    id 'com.google.devtools.ksp'
+}
+
+def verFile = file('../version.properties')
+def vCode = 1
+def vName = "1.0.0"
+if (verFile.exists()) {
+    def p = new Properties()
+    verFile.withInputStream { p.load(it) }
+    vCode = (p.getProperty('versionCode') ?: '1').toInteger()
+    vName = p.getProperty('versionName') ?: '1.0.0'
+}
+
+android {
+    compileSdk 34
+
+    defaultConfig {
+        namespace "com.nobodymusic.tyxypoor"
+        applicationId "com.nobodymusic.tyxypoor"
+        minSdk 26
+        targetSdk 34
+        versionCode vCode
+        versionName vName
+        vectorDrawables { useSupportLibrary true }
+        ndk { abiFilters 'arm64-v8a' }
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("NB_KEYSTORE") ?: "release.keystore")
+            storePassword System.getenv("NB_STORE_PASS") ?: "nobodymusic"
+            keyAlias System.getenv("NB_KEY_ALIAS") ?: "nobody"
+            keyPassword System.getenv("NB_KEY_PASS") ?: "nobodymusic"
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+    buildFeatures { compose true }
+    composeOptions { kotlinCompilerExtensionVersion '1.5.14' }
+    packaging {
+        resources {
+            excludes += '/META-INF/{AL2.0,LGPL2.1}'
+            excludes += '/META-INF/DEPENDENCIES'
+            excludes += '/META-INF/LICENSE*'
+            excludes += '/META-INF/NOTICE*'
+        }
+    }
+    lint { abortOnError false; checkReleaseBuilds false }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.each { output ->
+            output.outputFileName.set("NobodyMusic-${variant.name}-v${vName}-${vCode}.apk")
+        }
+    }
+}
+
+// 打包后自动归档到 apk_history，保留全部历史
+tasks.configureEach { t ->
+    if (t.name == 'assembleDebug' || t.name == 'assembleRelease') {
+        t.doLast {
+            def hist = file("${rootDir}/apk_history")
+            hist.mkdirs()
+            fileTree("${buildDir}/outputs/apk").matching { include '**/*.apk' }.each { f ->
+                def dst = new File(hist, f.name)
+                if (!dst.exists()) java.nio.file.Files.copy(f.toPath(), dst.toPath())
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4'
+    implementation 'androidx.lifecycle:lifecycle-process:2.8.4'
+    implementation 'androidx.activity:activity-compose:1.9.1'
+    implementation platform('androidx.compose:compose-bom:2024.09.00')
+    implementation 'androidx.compose.ui:ui'
+    implementation 'androidx.compose.ui:ui-graphics'
+    implementation 'androidx.compose.ui:ui-tooling-preview'
+    implementation 'androidx.compose.material3:material3'
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation 'androidx.navigation:navigation-compose:2.7.7'
+    implementation 'androidx.palette:palette-ktx:1.0.0'
+
+    implementation 'androidx.media3:media3-exoplayer:1.4.1'
+    implementation 'androidx.media3:media3-exoplayer-hls:1.4.1'
+    implementation 'androidx.media3:media3-datasource-okhttp:1.4.1'
+    implementation 'androidx.media3:media3-session:1.4.1'
+    implementation 'androidx.media3:media3-ui:1.4.1'
+
+    implementation 'androidx.room:room-runtime:2.6.1'
+    implementation 'androidx.room:room-ktx:2.6.1'
+    ksp 'androidx.room:room-compiler:2.6.1'
+
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+    implementation 'org.mozilla:rhino:1.7.15'
+
+    debugImplementation 'androidx.compose.ui:ui-tooling'
+}
