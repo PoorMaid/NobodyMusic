@@ -116,3 +116,22 @@ ServiceLocator：appContext database repository sourceManager localScanner
 
 ### 收尾动作
 - 修复后更新 README / Release 说明，推送同步到 GitHub 仓库
+
+## 2026-10-03 v1.3.2 修复完成
+版本 versionCode 6 / versionName 1.3.2。已编译打包并发布。
+代码改动（12 处）：
+- 新建 player/PlayerHolder.kt：全局唯一 ExoPlayer 单例（AudioAttributes=USAGE_MEDIA/MUSIC，handleAudioBecomingNoisy）
+- 重写 player/PlaybackService.kt：改用 PlayerHolder 共享 player 建 MediaSession，onDestroy 不 release player
+- 重写 player/PlayerController.kt：新增 PlayOrder 枚举(SEQUENCE/LOOP_ALL/LOOP_ONE/SHUFFLE)、order StateFlow、cycleOrder/applyOrder、detachUi/release、next/previous 按顺序分支
+- PlayerScreen.kt：shuffle+repeat 两按钮合并为单按钮四态切换；删独立 Shuffle 按钮
+- HomeScreen.kt：最近/搜索列表 key 加 index 前缀（修闪退）
+- Theme.kt：LightColors 补 background/surface/surfaceVariant（提亮）
+- AndroidManifest.xml：补 REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+- BackupManager.kt：importJson 补 playlistSongIds 关联重建
+- FloatingLyricService.kt：ACTION_MOVE 修正上下拖动方向
+- AppState.kt：init 启动 PlaybackService（MediaSession 生效）
+- MainActivity.kt：release() -> detachUi()
+- version.properties：5/1.3.1 -> 6/1.3.2
+构建：compileDebugKotlin OK，assembleDebug OK，产物 apk_history/NobodyMusic-debug-v1.3.2-6.apk (25191845 字节, md5 943d93194b18657a4d5f8b3d2b32ad55)
+发布：GitHub Release v1.3.2 (PoorMaid/NobodyMusic) 已上传 APK；官网 nobady.bbroot.com 已 surge 发布，business.html 指向新 APK。
+未解决（遗留）：问题3 下载失败、问题11 GitHub 数据同步功能未实现；导出端歌单归属对应关系精度待重构。
