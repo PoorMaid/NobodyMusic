@@ -88,3 +88,31 @@ ServiceLocator：appContext database repository sourceManager localScanner
 - 新增 PlaylistImportScreen: 本地目录扫描多选导入 / 文本粘贴导入
 - MainActivity + SettingsScreen: 接入“导入歌单”路由
 - compileDebugKotlin: BUILD SUCCESSFUL
+
+## 2026-10-03 用户实测问题清单（v1.3.1）
+
+详见 /storage/emulated/0/Download/nobody_build/BUGS.md，摘要如下：
+
+### 播放核心
+1. 音乐头尾无声（0 时长/解析失败）——很多歌点进去头尾都是零
+2. 播放音乐未注册为音频——系统媒体控制/通知栏不认，疑 MediaSession 未 active
+3. 下载音乐一直失败 —— OkHttpDownloader 权限/路径/直链
+
+### 播放顺序按钮（UI 重构）
+4. 现为「随机」+「循环」两个独立按钮 → 合并为单一按钮循环切换
+   顺序播放 → 列表循环 → 单曲循环 → 随机播放
+   每态图标不同 + 文字提示；PlayerController 用单一 playOrder 状态机取代 shuffle+repeat
+
+### 界面
+5. 点「最近」闪退（空数据 NPE/路由）
+6. 浅色主题偏暗，应更亮
+7. 桌面歌词拖动上下颠倒（y 轴取反）
+8. 均衡器无法挂载（依赖问题2 的音频注册 + sessionId 绑定）
+9. 「忽略电池优化」点击无反应（缺 intent + 权限）
+
+### 数据/功能
+10. 导入备份提示成功但「我的音乐」/歌单看不到数据（未落库/未刷新）
+11. GitHub 数据同步功能未实现
+
+### 收尾动作
+- 修复后更新 README / Release 说明，推送同步到 GitHub 仓库

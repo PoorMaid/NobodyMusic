@@ -9,13 +9,15 @@ import com.nobodymusic.tyxypoor.data.Song
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+enum class PlayOrder { SEQUENCE, LOOP_ALL, LOOP_ONE, SHUFFLE }
+
 class PlayerController(context: Context) {
     var onSongChanged: ((Song?) -> Unit)? = null
     var onSessionIdReady: ((Int) -> Unit)? = null
     var onNeedResolve: ((Song) -> Unit)? = null
     var onIndexChanged: ((Int) -> Unit)? = null
 
-    val exo: ExoPlayer = ExoPlayer.Builder(context).build()
+    val exo: ExoPlayer = PlayerHolder.get(context)
 
     private val _current = MutableStateFlow<Song?>(null)
     val current: StateFlow<Song?> = _current
@@ -34,6 +36,11 @@ class PlayerController(context: Context) {
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration
 
+    private val _order = MutableStateFlow(PlayOrder.SEQUENCE)
+    val order: StateFlow<PlayOrder> = _order
+
+    private var resolvedUid: String = ""
+
     private val listener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _isPlaying.value = isPlaying
@@ -46,11 +53,15 @@ class PlayerController(context: Context) {
             _current.value = sg
             onIndexChanged?.invoke(idx)
             onSongChanged?.invoke(sg)
+            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                if (_order.value == PlayOrder.LOOP_ONE) return
+            }
             if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) {
                 val playable = sg.isLocal || sg.uri.startsWith("http") || sg.uri.startsWith("content")
-                if (!playable) onNeedResolve?.invoke(sg)
+                if (!playable && sg.uid != resolvedUid) onNeedResolve?.invoke(sg)
             }
         }
+
         override fun onAudioSessionIdChanged(audioSessionId: Int) {
             onSessionIdReady?.invoke(audioSessionId)
         }
@@ -81,6 +92,7 @@ class PlayerController(context: Context) {
         _queue.value = q
         _index.value = i
         _current.value = song
+        resolvedUid = song.uid
         val item = if (url != null) MediaItem.Builder()
             .setUri(url)
             .setMediaId(song.uid)
@@ -96,17 +108,18 @@ class PlayerController(context: Context) {
         setQueue(songs, startIndex)
         val sg = songs.getOrNull(startIndex) ?: return
         val playable = sg.isLocal || sg.uri.startsWith("http") || sg.uri.startsWith("content")
-        if (!playable) {
+        if (playable) {
+            exo.playWhenReady = true
+        } else {
             exo.pause()
             onNeedResolve?.invoke(sg)
-        } else {
-            exo.playWhenReady = true
         }
     }
 
     fun playSingle(song: Song) {
         _current.value = song
         _queue.value = listOf(song)
+        resolvedUid = song.uid
         exo.setMediaItem(song.toMediaItem())
         onSongChanged?.invoke(song)
         exo.prepare()
@@ -121,8 +134,8 @@ class PlayerController(context: Context) {
         val q = _queue.value
         if (q.isEmpty()) return
         val cur = _index.value
-        val target = when {
-            _shuffle.value -> {
+        val target = when (_order.value) {
+            PlayOrder.SHUFFLE -> {
                 if (q.size <= 1) cur
                 else {
                     var n = cur
@@ -130,12 +143,18 @@ class PlayerController(context: Context) {
                     n
                 }
             }
+            PlayOrder.LOOP_ONE -> if (userTriggered) (cur + 1) % q.size else cur
             else -> {
                 val n = cur + 1
                 if (n < q.size) n
-                else if (_repeatMode.value == Player.REPEAT_MODE_OFF && !userTriggered) return
+                else if (_order.value == PlayOrder.SEQUENCE && !userTriggered) return
                 else 0
             }
+        }
+        if (target == cur && _order.value == PlayOrder.LOOP_ONE && !userTriggered) {
+            exo.seekTo(0L)
+            exo.play()
+            return
         }
         goTo(target)
     }
@@ -144,14 +163,12 @@ class PlayerController(context: Context) {
         val q = _queue.value
         if (q.isEmpty()) return
         val cur = _index.value
-        val target = when {
-            _shuffle.value -> {
-                if (q.size <= 1) cur else (0 until q.size).random()
-            }
+        val target = when (_order.value) {
+            PlayOrder.SHUFFLE -> if (q.size <= 1) cur else (0 until q.size).random()
             else -> {
                 val n = cur - 1
                 if (n >= 0) n
-                else if (_repeatMode.value == Player.REPEAT_MODE_OFF && !userTriggered) return
+                else if (_order.value == PlayOrder.SEQUENCE && !userTriggered) return
                 else q.size - 1
             }
         }
@@ -165,7 +182,7 @@ class PlayerController(context: Context) {
         _current.value = sg
         exo.seekTo(index, 0L)
         val playable = sg.isLocal || sg.uri.startsWith("http") || sg.uri.startsWith("content")
-        if (!playable) {
+        if (!playable && sg.uid != resolvedUid) {
             exo.pause()
             onNeedResolve?.invoke(sg)
         } else {
@@ -173,25 +190,41 @@ class PlayerController(context: Context) {
             exo.play()
         }
     }
+
     fun seekTo(ms: Long) { exo.seekTo(ms); _position.value = ms }
 
-    private val _shuffle = MutableStateFlow(false)
-    val shuffle: StateFlow<Boolean> = _shuffle
-    private val _repeatMode = MutableStateFlow(Player.REPEAT_MODE_OFF)
-    val repeatMode: StateFlow<Int> = _repeatMode
-    fun toggleShuffle() {
-        _shuffle.value = !_shuffle.value
-        exo.shuffleModeEnabled = _shuffle.value
-    }
-    fun cycleRepeat() {
-        val next = when (_repeatMode.value) {
-            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
-            Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
-            else -> Player.REPEAT_MODE_OFF
+    fun cycleOrder() {
+        val next = when (_order.value) {
+            PlayOrder.SEQUENCE -> PlayOrder.LOOP_ALL
+            PlayOrder.LOOP_ALL -> PlayOrder.LOOP_ONE
+            PlayOrder.LOOP_ONE -> PlayOrder.SHUFFLE
+            PlayOrder.SHUFFLE -> PlayOrder.SEQUENCE
         }
-        _repeatMode.value = next
-        exo.repeatMode = next
+        applyOrder(next)
     }
+
+    fun applyOrder(o: PlayOrder) {
+        _order.value = o
+        when (o) {
+            PlayOrder.SHUFFLE -> {
+                exo.shuffleModeEnabled = true
+                exo.repeatMode = Player.REPEAT_MODE_ALL
+            }
+            PlayOrder.LOOP_ALL -> {
+                exo.shuffleModeEnabled = false
+                exo.repeatMode = Player.REPEAT_MODE_ALL
+            }
+            PlayOrder.LOOP_ONE -> {
+                exo.shuffleModeEnabled = false
+                exo.repeatMode = Player.REPEAT_MODE_ONE
+            }
+            PlayOrder.SEQUENCE -> {
+                exo.shuffleModeEnabled = false
+                exo.repeatMode = Player.REPEAT_MODE_OFF
+            }
+        }
+    }
+
     fun tick() {
         _position.value = exo.currentPosition
         _duration.value = exo.duration.coerceAtLeast(0)
@@ -199,7 +232,10 @@ class PlayerController(context: Context) {
 
     fun release() {
         exo.removeListener(listener)
-        exo.release()
+    }
+
+    fun detachUi() {
+        exo.removeListener(listener)
     }
 }
 

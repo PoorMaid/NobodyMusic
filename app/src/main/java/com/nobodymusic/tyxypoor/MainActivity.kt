@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
             if (dlMsg.isNotBlank()) snackbar.showSnackbar(dlMsg)
         }
         DisposableEffect(Unit) {
-            onDispose { app.player.release() }
+            onDispose { app.player.detachUi() }
         }
         val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
         Box(Modifier.fillMaxSize()) {

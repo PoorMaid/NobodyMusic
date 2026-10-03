@@ -435,6 +435,11 @@ class AppState(val context: Context) {
 
     init {
         instance = this
+        runCatching {
+            val i = android.content.Intent(context, com.nobodymusic.tyxypoor.player.PlaybackService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= 26) context.startForegroundService(i)
+            else context.startService(i)
+        }
         player.onSessionIdReady = { sid -> eq.attach(sid) }
         player.onSongChanged = { s -> loadLyric(s) }
         player.onNeedResolve = { s -> resolveAndPlay(s) }

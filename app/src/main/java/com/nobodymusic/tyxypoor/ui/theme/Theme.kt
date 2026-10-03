@@ -35,7 +35,10 @@ val LocalThemePrefs = staticCompositionLocalOf { ThemePrefs() }
 private val LightColors = lightColorScheme(
     primary = Color(0xFF6750A4),
     secondary = Color(0xFF625B71),
-    tertiary = Color(0xFF7D5260)
+    tertiary = Color(0xFF7D5260),
+    background = Color(0xFFFDFBFF),
+    surface = Color(0xFFFDFBFF),
+    surfaceVariant = Color(0xFFE7E0EC)
 )
 
 private val DarkColors = darkColorScheme(

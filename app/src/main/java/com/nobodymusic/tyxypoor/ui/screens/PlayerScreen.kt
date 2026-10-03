@@ -49,8 +49,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.media3.common.Player
 import coil.compose.AsyncImage
+import com.nobodymusic.tyxypoor.player.PlayOrder
 import com.nobodymusic.tyxypoor.ui.Fmt
 import com.nobodymusic.tyxypoor.ui.LocalAppState
 @Composable
@@ -60,8 +60,7 @@ fun PlayerScreen(onBack: () -> Unit) {
     val playing by app.player.isPlaying.collectAsStateWithLifecycle()
     val pos by app.player.position.collectAsStateWithLifecycle()
     val dur by app.player.duration.collectAsStateWithLifecycle()
-    val shuffle by app.player.shuffle.collectAsStateWithLifecycle()
-    val repeatMode by app.player.repeatMode.collectAsStateWithLifecycle()
+    val order by app.player.order.collectAsStateWithLifecycle()
     val lyric by app.lyric.collectAsStateWithLifecycle()
     var dragging by remember { mutableStateOf<Float?>(null) }
     var fav by remember(song?.uid) { mutableStateOf(false) }
@@ -141,13 +140,6 @@ fun PlayerScreen(onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            IconButton(onClick = { app.player.toggleShuffle() }) {
-                Icon(
-                    Icons.Default.Shuffle, "随机播放",
-                    tint = if (shuffle) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
             IconButton(onClick = { app.player.previous() }) {
                 Icon(Icons.Default.SkipPrevious, "上一首", modifier = Modifier.size(40.dp))
             }
@@ -160,13 +152,21 @@ fun PlayerScreen(onBack: () -> Unit) {
             IconButton(onClick = { app.player.next() }) {
                 Icon(Icons.Default.SkipNext, "下一首", modifier = Modifier.size(40.dp))
             }
-            IconButton(onClick = { app.player.cycleRepeat() }) {
-                val active = repeatMode != Player.REPEAT_MODE_OFF
+            IconButton(onClick = { app.player.cycleOrder() }) {
                 Icon(
-                    if (repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne
-                    else Icons.Default.Repeat,
-                    "循环模式",
-                    tint = if (active) MaterialTheme.colorScheme.primary
+                    when (order) {
+                        PlayOrder.SHUFFLE -> Icons.Default.Shuffle
+                        PlayOrder.LOOP_ONE -> Icons.Default.RepeatOne
+                        PlayOrder.LOOP_ALL -> Icons.Default.Repeat
+                        PlayOrder.SEQUENCE -> Icons.Default.PlayArrow
+                    },
+                    when (order) {
+                        PlayOrder.SHUFFLE -> "随机播放"
+                        PlayOrder.LOOP_ONE -> "单曲循环"
+                        PlayOrder.LOOP_ALL -> "列表循环"
+                        PlayOrder.SEQUENCE -> "顺序播放"
+                    },
+                    tint = if (order != PlayOrder.SEQUENCE) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

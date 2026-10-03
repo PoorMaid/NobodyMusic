@@ -113,6 +113,12 @@ object BackupManager {
                     plCount++
                 }
 
+                val ps = root.optJSONArray("playlistSongIds") ?: JSONArray()
+                if (ps.length() > 0) {
+                    var pid = repo.createPlaylist("导入的歌单", System.currentTimeMillis())
+                    repo.addSongsToPlaylist(pid, (0 until ps.length()).map { ps.optLong(it) })
+                }
+
                 val srcs = root.optJSONArray("sources") ?: JSONArray()
                 for (i in 0 until srcs.length()) {
                     val s = srcs.getJSONObject(i)

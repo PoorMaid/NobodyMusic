@@ -277,7 +277,7 @@ private fun HistoryTab(onOpenPlayer: () -> Unit) {
             }
         }
         LazyColumn(Modifier.fillMaxSize()) {
-            itemsIndexed(hist, key = { _, s -> s.uid }) { i, s ->
+            itemsIndexed(hist, key = { i, s -> "$i:${s.uid}" }) { i, s ->
                 SongRow(s, i + 1) {
                     app.playNow(s, hist)
                     onOpenPlayer()
@@ -317,7 +317,7 @@ private fun SearchTab(onOpenPlayer: () -> Unit) {
                     CircularProgressIndicator()
                 }
                 results.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
-                    itemsIndexed(results, key = { _, s -> s.uid }) { i, s ->
+                    itemsIndexed(results, key = { i, s -> "$i:${s.uid}" }) { i, s ->
                         SongRow(s, i + 1) {
                             app.playNow(s, results)
                             onOpenPlayer()

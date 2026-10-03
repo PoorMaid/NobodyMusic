@@ -173,7 +173,8 @@ class FloatingLyricService : Service() {
                 }
                 MotionEvent.ACTION_MOVE -> {
                     p.x = ox + (e.rawX - downX).toInt()
-                    p.y = oy + (e.rawY - downY).toInt()
+                    p.y = if (mode == MODE_ISLAND) oy + (e.rawY - downY).toInt()
+                    else oy - (e.rawY - downY).toInt()
                     runCatching { wm?.updateViewLayout(root, p) }
                     true
                 }
