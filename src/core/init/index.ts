@@ -50,7 +50,9 @@ export default async() => {
 
   {
     const st = (await import('@/store/setting/state')).default
-    setApiSource(st.setting['common.apiSource'] || setting['common.apiSource'])
+    const { autoPickApiSource } = await import('@/sources/builtin/autoPick')
+    await autoPickApiSource()
+    if (!st.setting['common.apiSource']) setApiSource(st.setting['common.apiSource'] || setting['common.apiSource'])
   }
   bootLog('Api inited.')
 
