@@ -1,0 +1,104 @@
+{
+  "sources": [
+    {
+      "key": "juhe",
+      "name": "聚合",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/juhe/latest.js"
+    },
+    {
+      "key": "lx",
+      "name": "LX",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/lx/latest.js"
+    },
+    {
+      "key": "ikun",
+      "name": "i坤",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/ikun/latest.js"
+    },
+    {
+      "key": "grass",
+      "name": "Grass",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/grass/latest.js"
+    },
+    {
+      "key": "flower",
+      "name": "Flower",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/flower/latest.js"
+    },
+    {
+      "key": "huibq",
+      "name": "Huibq",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/huibq/latest.js"
+    },
+    {
+      "key": "sixyin",
+      "name": "SixYin",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/sixyin/latest.js"
+    },
+    {
+      "key": "qdy",
+      "name": "qdy",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/qdy/latest.js"
+    },
+    {
+      "key": "yuningxi",
+      "name": "Yun",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/yuningxi/latest.js"
+    },
+    {
+      "key": "qingliang",
+      "name": "清凉",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/qingliang/latest.js"
+    },
+    {
+      "key": "xinghai",
+      "name": "星海",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/xinghai/latest.js"
+    },
+    {
+      "key": "suyin",
+      "name": "随音",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/suyin/latest.js"
+    },
+    {
+      "key": "xinglan",
+      "name": "星岚",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/xinglan/latest.js"
+    },
+    {
+      "key": "jiexiang",
+      "name": "解耦",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/jiexiang/latest.js"
+    },
+    {
+      "key": "hyw",
+      "name": "H氪",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/hyw/latest.js"
+    },
+    {
+      "key": "huanyin",
+      "name": "幻音",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/huanyin/latest.js"
+    },
+    {
+      "key": "helloworld",
+      "name": "Hello",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/helloworld/latest.js"
+    },
+    {
+      "key": "fish",
+      "name": "Fish",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/fish/latest.js"
+    },
+    {
+      "key": "feichangdao",
+      "name": "非常道",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/feichangdao/latest.js"
+    },
+    {
+      "key": "changqing",
+      "name": "长青",
+      "url": "https://raw.githubusercontent.com/pdone/lx-music-source/main/changqing/latest.js"
+    }
+  ]
+}
