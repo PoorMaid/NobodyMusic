@@ -74,7 +74,10 @@ export default async(setting: LX.AppSetting) => {
   const handleStateChange = ({ status, errorMessage, info }: InitParams) => {
     // console.log(status, message, info)
     setUserApiStatus(status, errorMessage)
-    if (!info || info.id !== settingState.setting['common.apiSource']) return
+    if (!info) return
+    if (info.id !== settingState.setting['common.apiSource']) {
+      settingState.setting['common.apiSource'] = info.id
+    }
     if (status) {
       if (info.sources) {
         let apis: any = {}
