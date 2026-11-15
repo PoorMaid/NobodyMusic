@@ -28,6 +28,10 @@ jobs:
           echo "sdk.dir=$SDKROOT" >> android/local.properties
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+      - name: Verify babel aliases
+        run: |
+          cat babel.config.js
+          grep -q module-resolver babel.config.js && echo BABEL_ALIAS_OK
       - name: Prepare signing
         env:
           KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
@@ -39,7 +43,6 @@ jobs:
             echo "$KEYSTORE_B64" | base64 -d > "$GITHUB_WORKSPACE/android/app/nobody.jks"
             printf 'storeFile=%s/android/app/nobody.jks\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$GITHUB_WORKSPACE" "$STORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > "$GITHUB_WORKSPACE/android/keystore.properties"
             echo SIGNING_CONFIGURED
-            cat "$GITHUB_WORKSPACE/android/keystore.properties" | sed 's/storePassword=.*/storePassword=***/; s/keyPassword=.*/keyPassword=***/'
           else
             echo NO_KEYSTORE_SECRET
             exit 1
