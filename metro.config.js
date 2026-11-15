@@ -4,14 +4,16 @@ const config = {
   resolver: {
     extraNodeModules: {
       buffer: require.resolve('@craftzdog/react-native-buffer'),
+      '@': path.resolve(__dirname, 'src'),
     },
   },
+  watchFolders: [path.resolve(__dirname, 'src')],
   watcher: {
     watchman: false,
     enableWatch: false,
     ignorePatterns: [
       new RegExp('node_modules/.*build/'),
-      new RegExp('node_modules/.*\.cxx/'),
+      new RegExp('node_modules/.*\\.cxx/'),
     ],
   },
 }
