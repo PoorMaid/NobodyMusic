@@ -48,11 +48,11 @@ export default async() => {
   await initUserApi(setting)
   bootLog('User Api inited.')
 
-  {
-    const st = (await import('@/store/setting/state')).default
-    const { autoPickApiSource } = await import('@/sources/builtin/autoPick')
-    await autoPickApiSource()
-    if (!st.setting['common.apiSource']) setApiSource(st.setting['common.apiSource'] || setting['common.apiSource'])
+  // Nobody Music: 直接用已保存的音源完成初始化，启动时不逐一探测
+  // 仅在已保存的音源与当前生效音源不一致时才切换，避免首次安装传空值
+  if (setting['common.apiSource'] &&
+    settingState.setting['common.apiSource'] !== setting['common.apiSource']) {
+    setApiSource(setting['common.apiSource'])
   }
   bootLog('Api inited.')
 

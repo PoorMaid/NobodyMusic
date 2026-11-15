@@ -255,12 +255,21 @@ export default async(setting: LX.AppSetting) => {
     }
   })
 
-  // Nobody Music: 启动时自动在线导入内置音源（首次或版本升级时），失败不影响启动
+  // Nobody Music: 先用本地已有音源立即完成初始化，不阻塞首屏
   try {
-    const { ensureBuiltinSources } = await import('@/sources/builtin/ensure')
-    await ensureBuiltinSources()
+    setUserApiList(await getUserApiList())
   } catch (err) {
-    log.warn('ensureBuiltinSources failed: ' + (err as Error).message)
+    log.warn('initUserApi setUserApiList failed: ' + (err as Error).message)
   }
-  setUserApiList(await getUserApiList())
+  // Nobody Music: 音源导入/更新改为启动后的后台任务，不参与启动等待
+  setTimeout(() => {
+    void (async() => {
+      try {
+        const { ensureBuiltinSources } = await import('@/sources/builtin/ensure')
+        await ensureBuiltinSources()
+      } catch (err) {
+        log.warn('ensureBuiltinSources failed: ' + (err as Error).message)
+      }
+    })()
+  }, 1500)
 }
