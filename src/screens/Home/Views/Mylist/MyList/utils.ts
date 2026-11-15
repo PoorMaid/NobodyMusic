@@ -23,7 +23,7 @@ const getIntv = (musicInfo: LX.Music.MusicInfo) => {
  */
 export const sortListMusicInfo = (list: LX.Music.MusicInfo[], sortType: 'up' | 'down' | 'random', fieldName: 'name' | 'singer' | 'album' | 'time' | 'source', localeId: string) => {
   // console.log(sortType, fieldName, localeId)
-  localeId = localeId.replaceAll('_', '-')
+  localeId = localeId.replace(/_/g, '-')
   switch (sortType) {
     case 'random':
       arrShuffle(list)

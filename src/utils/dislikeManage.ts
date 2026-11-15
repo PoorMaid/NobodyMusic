@@ -22,9 +22,9 @@ const updateDislikeInfo = (rules: string) => {
     if (!item) continue
     let [name, singer] = item.split(SPLIT_CHAR.DISLIKE_NAME)
     if (name) {
-      name = name.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim()
+      name = name.replace(/@/g, '#').toLocaleLowerCase().trim()
       if (singer) {
-        singer = singer.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim()
+        singer = singer.replace(/@/g, '#').toLocaleLowerCase().trim()
         const rule = `${name}${SPLIT_CHAR.DISLIKE_NAME}${singer}`
         dislikeInfo.names.add(rule)
         list.push(rule)
@@ -33,7 +33,7 @@ const updateDislikeInfo = (rules: string) => {
         list.push(name)
       }
     } else if (singer) {
-      singer = singer.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim()
+      singer = singer.replace(/@/g, '#').toLocaleLowerCase().trim()
       dislikeInfo.singerNames.add(singer)
       list.push(`${SPLIT_CHAR.DISLIKE_NAME}${singer}`)
     }
