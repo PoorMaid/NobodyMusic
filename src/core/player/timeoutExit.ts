@@ -13,11 +13,13 @@ const timeoutTools = {
   time: -1,
   timeHooks: [] as Hook[],
   exit() {
-    if (settingState.setting['player.timeoutExitPlayed'] && playerState.isPlay) {
+    if (settingState.setting['player.timeoutExitPlayed']) {
+      // 勾选：停止播放并直接退出软件
+      exitApp('Timeout Exit')
+    } else {
+      // 不勾选：只停止播放
       global.lx.isPlayedStop = true
       this.callHooks()
-    } else {
-      exitApp('Timeout Exit')
     }
   },
   getTime() {

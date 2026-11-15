@@ -95,7 +95,7 @@ export const storageDataPrefixOld = {
   notificationTipEnable: '@notification_tip_enable',
 } as const
 
-export const APP_PROVIDER_NAME = 'cn.toside.music.mobile.provider'
+export const APP_PROVIDER_NAME = 'com.nobody.music.provider'
 
 
 export const NAV_MENUS = [
@@ -104,6 +104,7 @@ export const NAV_MENUS = [
   { id: 'nav_top', icon: 'leaderboard' },
   { id: 'nav_love', icon: 'love' },
   { id: 'nav_download', icon: 'download-2' },
+  // nav_setting 保留在类型中，但不在底部导航栏显示（入口移至顶部 Header）
   { id: 'nav_setting', icon: 'setting' },
 ] as const
 
