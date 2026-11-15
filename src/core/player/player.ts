@@ -6,6 +6,7 @@ import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 import {
   getList,
+  getListAsync,
   setPlayMusicInfo,
   setMusicInfo,
   setPlayListId,
@@ -423,7 +424,8 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
   // console.log(playInfo.playerListId)
   const currentListId = playInfo.playerListId
   if (!currentListId) return handleToggleStop()
-  const currentList = getList(currentListId)
+  let currentList = getList(currentListId)
+  if (!currentList.length) currentList = await getListAsync(currentListId)
 
   const playedList = playerState.playedList
 
@@ -514,7 +516,8 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
 
   const currentListId = playInfo.playerListId
   if (!currentListId) return handleToggleStop()
-  const currentList = getList(currentListId)
+  let currentList = getList(currentListId)
+  if (!currentList.length) currentList = await getListAsync(currentListId)
 
   const playedList = playerState.playedList
   if (playedList.length) {

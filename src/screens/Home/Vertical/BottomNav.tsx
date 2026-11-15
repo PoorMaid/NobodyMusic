@@ -14,7 +14,7 @@ import { scaleSizeH, scaleSizeW } from '@/utils/pixelRatio'
 const BAR_HEIGHT = scaleSizeH(54)
 const ICON_SIZE = 20
 
-const HANDLE_SIZE = scaleSizeW(22)
+const HANDLE_SIZE = scaleSizeW(34)
 const OUTER_PADDING_TOP = scaleSizeH(4)
 const OUTER_PADDING_BOTTOM = scaleSizeH(4)
 
@@ -115,7 +115,7 @@ const BottomNav = ({ onVisibleChange }: { onVisibleChange?: (visible: boolean) =
         }} pointerEvents={open ? 'auto' : 'none'}>
           <View style={[styles.bar, { backgroundColor: theme['c-content-background'] }]}>
             <View style={styles.list}>
-              {NAV_MENUS.map(menu => (
+              {NAV_MENUS.filter(menu => menu.id != 'nav_setting').map(menu => (
                 <NavItem key={menu.id} id={menu.id} icon={menu.icon} active={activeId == menu.id && open} />
               ))}
             </View>
@@ -124,7 +124,7 @@ const BottomNav = ({ onVisibleChange }: { onVisibleChange?: (visible: boolean) =
         <TouchableOpacity style={[styles.handle, { backgroundColor: theme['c-content-background'] }]} onPress={toggle} activeOpacity={0.8}>
           <Icon
             name={open ? 'chevron-right-2' : 'chevron-left-2'}
-            size={12}
+            size={16}
             color={theme['c-primary-font-active']}
             style={{ transform: [{ rotate: open ? '90deg' : '-90deg' }] }}
           />
@@ -178,15 +178,15 @@ const styles = createStyle({
   handle: {
     width: HANDLE_SIZE,
     height: HANDLE_SIZE,
-    marginLeft: 6,
+    marginLeft: scaleSizeW(10),
     borderRadius: BorderRadius.round,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 8,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.16,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
   },
 })
 
