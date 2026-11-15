@@ -5,8 +5,8 @@ import { event } from './event'
 
 export const hasDislike = (info: LX.Music.MusicInfo | LX.Download.ListItem) => {
   if ('progress' in info) info = info.metadata.musicInfo
-  const name = info.name?.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim() ?? ''
-  const singer = info.singer?.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim() ?? ''
+  const name = info.name?.replace(/@/g, '#').toLocaleLowerCase().trim() ?? ''
+  const singer = info.singer?.replace(/@/g, '#').toLocaleLowerCase().trim() ?? ''
 
   return state.dislikeInfo.musicNames.has(name) || state.dislikeInfo.singerNames.has(singer) ||
     state.dislikeInfo.names.has(`${name}${SPLIT_CHAR.DISLIKE_NAME}${singer}`)

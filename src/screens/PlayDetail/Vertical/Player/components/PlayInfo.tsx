@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { View } from 'react-native'
 
-import Progress from '@/components/player/ProgressBar'
+import Progress from '@/components/player/WaveProgressBar'
 import Status from './Status'
 import { useProgress } from '@/store/player/hook'
 import { useTheme } from '@/store/theme/hook'

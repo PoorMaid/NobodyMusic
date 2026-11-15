@@ -39,8 +39,8 @@ export const filterMusicList = ({ playedList, listId, list, playerMusicInfo, dis
   let canPlayList: Array<LX.Music.MusicInfo | LX.Download.ListItem> = []
   const filteredPlayedList = playedList.filter(pmInfo => pmInfo.listId == listId && !pmInfo.isTempPlay).map(({ musicInfo }) => musicInfo)
   const hasDislike = (info: LX.Music.MusicInfo) => {
-    const name = info.name?.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim() ?? ''
-    const singer = info.singer?.replaceAll(SPLIT_CHAR.DISLIKE_NAME, SPLIT_CHAR.DISLIKE_NAME_ALIAS).toLocaleLowerCase().trim() ?? ''
+    const name = info.name?.replace(/@/g, '#').toLocaleLowerCase().trim() ?? ''
+    const singer = info.singer?.replace(/@/g, '#').toLocaleLowerCase().trim() ?? ''
 
     return dislikeInfo.musicNames.has(name) || dislikeInfo.singerNames.has(singer) ||
       dislikeInfo.names.has(`${name}${SPLIT_CHAR.DISLIKE_NAME}${singer}`)
