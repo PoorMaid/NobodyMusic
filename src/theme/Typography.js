@@ -47,10 +47,11 @@ export const BorderWidths = {
 }
 
 export const BorderRadius = {
-  normal: 4,
-  small: 8,
-  medium: 12,
-  large: 18,
-  xlarge: 24,
+  normal: 10,
+  small: 14,
+  medium: 20,
+  large: 26,
+  xlarge: 34,
+  xxlarge: 44,
   round: 999,
 }

@@ -161,6 +161,10 @@ export class AppEvent extends Event {
   changeMenuVisible(visible: boolean) {
     this.emit('changeMenuVisible', visible)
   }
+  // 底部导航栏显隐切换事件
+  changeBottomNavVisible(visible: boolean) {
+    this.emit('changeBottomNavVisible', visible)
+  }
 
   /**
    * 搜索类型改变事件
