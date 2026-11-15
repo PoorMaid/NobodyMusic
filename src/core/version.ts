@@ -20,6 +20,7 @@ export const hideModal = (componentId: string) => {
 }
 
 export const checkUpdate = async() => {
+  return
   versionActions.setVersionInfo({ status: 'checking' })
   let versionInfo: InitState['versionInfo'] = { ...versionState.versionInfo }
   try {
