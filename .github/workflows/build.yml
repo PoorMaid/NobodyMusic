@@ -3,6 +3,9 @@ on:
   push:
     branches: [ master, main ]
   workflow_dispatch:
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -58,3 +61,15 @@ jobs:
           name: NobodyMusic-APK
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+      - name: Publish Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: music-app-latest
+          name: Nobody Music 最新版
+          body: |
+            Nobody Music 自动构建（music-app-latest）
+            版本 10.2.0 (versionCode 23)
+            修复：启动不再探测音源、内置源后台导入、首装音源空值
+          files: android/app/build/outputs/apk/release/*.apk
+          make_latest: true
