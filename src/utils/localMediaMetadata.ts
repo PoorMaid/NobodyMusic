@@ -13,13 +13,31 @@ export {
 let cleared = false
 const picCachePath = temporaryDirectoryPath + '/local-media-metadata'
 
-export const scanAudioFiles = async(dirPath: string) => {
-  const files = await readDir(dirPath)
-  return files.filter(file => {
-    if (file.mimeType?.startsWith('audio/')) return true
-    if (extname(file?.name ?? '') === 'ogg') return true
-    return false
-  }).map(file => file)
+export const scanAudioFiles = async(dirPath: string, depth = 0): Promise<Awaited<ReturnType<typeof readDir>>> => {
+  const MAX_DEPTH = 8
+  let files: Awaited<ReturnType<typeof readDir>> = []
+  try {
+    files = await readDir(dirPath)
+  } catch {
+    return []
+  }
+  const result: Awaited<ReturnType<typeof readDir>> = []
+  const subDirs: string[] = []
+  for (const file of files) {
+    if (file.isDirectory) {
+      if (depth < MAX_DEPTH && file.path) subDirs.push(file.path)
+      continue
+    }
+    if (file.mimeType?.startsWith('audio/')) {
+      result.push(file)
+      continue
+    }
+    if (extname(file?.name ?? '') === 'ogg') result.push(file)
+  }
+  for (const sub of subDirs) {
+    result.push(...await scanAudioFiles(sub, depth + 1))
+  }
+  return result
 }
 
 const clearPicCache = async() => {

@@ -37,6 +37,9 @@ export default memo(() => {
   const openPactModal = () => {
     showPactModal()
   }
+  const openOfficialSite = () => {
+    void openUrl('https://1phone.cc.cd/')
+  }
   const openPartPage = () => {
     void openUrl('https://github.com/lyswhut/lx-music-mobile#%E9%A1%B9%E7%9B%AE%E5%8D%8F%E8%AE%AE')
   }
@@ -62,6 +65,12 @@ export default memo(() => {
 
   return (
     <Section title={t('setting_about')}>
+      <View style={styles.part}>
+        <Text style={styles.text}>官方网站：</Text>
+        <TouchableOpacity onPress={openOfficialSite}>
+          <Text style={textLinkStyle}>https://1phone.cc.cd/</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.part}>
         <Text style={styles.text} >本软件完全免费，代码已开源。开源地址：</Text>
         <TouchableOpacity onPress={openHomePage}>

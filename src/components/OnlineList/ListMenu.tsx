@@ -3,6 +3,10 @@ import { useI18n } from '@/lang'
 import Menu, { type Menus, type MenuType, type Position } from '@/components/common/Menu'
 import { hasDislike } from '@/core/dislikeList'
 import { hasMusicUrlByMusic } from '@/utils/data'
+import settingState from '@/store/setting/state'
+import { requestStoragePermission, toast } from '@/utils/tools'
+import { action as downloadAction } from '@/store/download'
+import DownloadSettingModal, { type DownloadSettingModalRefType } from '@/components/DownloadSettingModal'
 
 export interface SelectInfo {
   musicInfo: LX.Music.MusicInfoOnline
@@ -38,6 +42,8 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
   const menuRef = useRef<MenuType>(null)
   const selectInfoRef = useRef<SelectInfo>(initSelectInfo as SelectInfo)
   const [menus, setMenus] = useState<Menus>([])
+  const downloadModalRef = useRef<DownloadSettingModalRefType>(null)
+  const pendingDownloadRef = useRef<LX.Music.MusicInfoOnline[]>([])
 
   useImperativeHandle(ref, () => ({
     show(selectInfo, position) {
@@ -58,7 +64,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
     const menu = [
       { action: 'play', label: t('play') },
       { action: 'playLater', label: t('play_later') },
-      // { action: 'download', label: '下载' },
+      { action: 'download', label: t('download') },
       { action: 'add', label: t('add_to') },
       { action: 'copyName', label: t('copy_name') },
       { action: 'musicSourceDetail', label: t('music_source_detail') },
@@ -87,6 +93,21 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
       case 'playLater':
         props.onPlayLater(selectInfo)
         break
+      case 'download':
+        void (async() => {
+          const quality = settingState.setting['download.quality']
+          const granted = await requestStoragePermission()
+          if (granted === false) toast('未授予存储权限，可能无法保存文件')
+          else if (granted === null) toast('存储权限被永久拒绝，请到系统设置中开启')
+          pendingDownloadRef.current = selectInfo.single
+            ? [selectInfo.musicInfo]
+            : selectInfo.selectedList
+          downloadModalRef.current?.show({
+            quality,
+            title: selectInfo.single ? undefined : t('download_unified_setting'),
+          })
+        })()
+        break
       case 'add':
         props.onAdd(selectInfo)
         break
@@ -109,8 +130,22 @@ export default forwardRef<ListMenuType, ListMenuProps>((props: ListMenuProps, re
   }
 
   return (
-    visible
-      ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} />
-      : null
+    <>
+      {visible
+        ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} />
+        : null}
+      <DownloadSettingModal
+        ref={downloadModalRef}
+        onConfirm={(quality, downloadPic, downloadLyric) => {
+          const list = pendingDownloadRef.current
+          pendingDownloadRef.current = []
+          let added = 0
+          for (const m of list) {
+            if (downloadAction.addTask(m, quality, { downloadPic, downloadLyric })) added++
+          }
+          if (list.length > 1) toast(`已加入 ${added} 首到下载列表`)
+        }}
+      />
+    </>
   )
 })
