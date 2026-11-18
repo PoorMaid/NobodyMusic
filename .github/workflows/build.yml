@@ -79,7 +79,8 @@ jobs:
             Nobody Music 自动构建（${{ steps.ver.outputs.tag }}）
             版本 ${{ steps.ver.outputs.version }} (versionCode ${{ steps.ver.outputs.code }})
             本次更新：
-            - 修复顺序播放 / 列表循环 / 随机播放只播已听过的歌，不接着播当前列表下一首
-            - 排行榜、歌单等在线列表播完后可正常继续
+            - 修复扫描本机音乐后所有歌曲都归入「已下载音乐」的问题
+            - 「已下载音乐」只显示 Download/NobodyMusic 目录内的歌曲
+            - 「全部」显示除已下载目录外的其他本机音乐
           files: android/app/build/outputs/apk/release/*.apk
           make_latest: true

@@ -171,6 +171,7 @@
   "download_scanning": "正在扫描…",
   "download_scan_tip": "选择要扫描的音乐文件夹",
   "download_tab_downloaded": "已下载音乐",
+  "download_tab_local_music": "全部本地音乐",
   "download_scan_saved": "扫描下载目录",
   "download_local_empty": "暂无本地音乐，点击「扫描本机音乐」添加",
   "download_pic": "同时写入封面",

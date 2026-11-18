@@ -19,8 +19,8 @@ const { getDownloadDir } = downloadAction
 
 const FILTERS = [
   { key: 'downloaded', label: 'download_tab_downloaded' },
+  { key: 'all', label: 'download_tab_local_music' },
   { key: 'run', label: 'download_list_run' },
-  { key: 'all', label: 'download_list_all' },
   { key: 'waiting', label: 'download_list_waiting' },
   { key: 'error', label: 'download_list_error' },
   { key: 'completed', label: 'download_list_completed' },
@@ -34,6 +34,25 @@ const formatSize = size => {
   return (size / 1024 / 1024 / 1024).toFixed(2) + ' GB'
 }
 
+const normDir = dir => {
+  if (!dir) return ''
+  return dir.replace(/\/+$/g, '')
+}
+const isInDownloadDir = (path, downloadDir) => {
+  const d = normDir(downloadDir)
+  const p = normDir(path)
+  if (!d || !p) return false
+  return p === d || p.startsWith(d + '/')
+}
+const filterOutDownloadDir = (list, downloadDir) => {
+  const d = normDir(downloadDir)
+  if (!d) return list
+  return list.filter(item => {
+    const filePath = normDir(item.meta?.filePath || '')
+    if (!filePath) return true
+    return !(filePath === d || filePath.startsWith(d + '/'))
+  })
+}
 const FilterBar = memo(({ active, onSwitch }) => {
   const theme = useTheme()
   const t = useI18n()
@@ -114,20 +133,35 @@ export default memo(() => {
   const { tasks } = useDownloadList()
   const [filter, setFilter] = useState('downloaded')
   const [localList, setLocalList] = useState([])
-  const scanning = useListFetching(LIST_IDS.DOWNLOAD)
+  const [otherLocalList, setOtherLocalList] = useState([])
+  const fetchingDownload = useListFetching(LIST_IDS.DOWNLOAD)
+  const fetchingLocal = useListFetching(LIST_IDS.LOCAL)
+  const scanning = fetchingDownload || fetchingLocal
   const choosePathRef = useRef(null)
-
+  const allLocalList = useMemo(() => {
+    const downloadDir = getDownloadDir()
+    const merged = [...localList, ...filterOutDownloadDir(otherLocalList, downloadDir)]
+    const seen = new Set()
+    return merged.filter(item => {
+      if (!item || !item.id || seen.has(item.id)) return false
+      seen.add(item.id)
+      return true
+    })
+  }, [localList, otherLocalList])
   const loadLocal = useCallback(() => {
-    void getListMusics(LIST_IDS.DOWNLOAD).then(list => {
-      setLocalList([...list])
+    void Promise.all([
+      getListMusics(LIST_IDS.DOWNLOAD).catch(() => []),
+      getListMusics(LIST_IDS.LOCAL).catch(() => []),
+    ]).then(([downList, locList]) => {
+      setLocalList([...(downList || [])])
+      setOtherLocalList([...(locList || [])])
     }).catch(() => {})
   }, [])
-
   useEffect(() => {
     loadLocal()
     const handleUpdate = () => { loadLocal() }
     const handleListMusic = listId => {
-      if (listId === LIST_IDS.DOWNLOAD) handleUpdate()
+      if (listId === LIST_IDS.DOWNLOAD || listId === LIST_IDS.LOCAL) handleUpdate()
     }
     global.app_event.on('downloadListUpdate', handleUpdate)
     global.app_event.on('list_music_add', handleListMusic)
@@ -141,10 +175,9 @@ export default memo(() => {
     }
   }, [loadLocal])
 
-  const isLocalTab = filter === 'downloaded'
+  const isLocalTab = filter === 'downloaded' || filter === 'all'
 
   const filteredTasks = useMemo(() => {
-    if (filter === 'all') return tasks
     if (filter === 'run') return tasks.filter(task => task.status === 'run')
     if (filter === 'waiting') return tasks.filter(task => task.status === 'waiting')
     if (filter === 'error') return tasks.filter(task => task.status === 'error')
@@ -153,37 +186,45 @@ export default memo(() => {
   }, [tasks, filter])
 
   const handleScan = useCallback(() => {
-    if (filter === 'downloaded') {
-      void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('nav_local_music') }, getDownloadDir()).then(loadLocal)
+    if (!isLocalTab) {
+      choosePathRef.current?.show({
+        title: t('download_scan_tip'),
+        dirOnly: true,
+        isPersist: true,
+      })
       return
     }
-    choosePathRef.current?.show({
-      title: t('download_scan_tip'),
-      dirOnly: true,
-      isPersist: true,
-    })
-  }, [t, filter, loadLocal])
+    void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('download_tab_downloaded') }, getDownloadDir()).then(loadLocal)
+  }, [t, isLocalTab, loadLocal])
 
   const handleScanPath = useCallback(path => {
-    void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('nav_local_music') }, path).then(loadLocal)
+    const target = isInDownloadDir(path, getDownloadDir())
+      ? { id: LIST_IDS.DOWNLOAD, name: t('download_tab_downloaded') }
+      : { id: LIST_IDS.LOCAL, name: t('nav_local_music') }
+    void handleImportMediaFile(target, path).then(loadLocal)
   }, [loadLocal, t])
 
+  const activeLocalList = filter === 'downloaded' ? localList : allLocalList
   const handlePlayLocal = useCallback(index => {
-    void playListById(LIST_IDS.DOWNLOAD, localList[index].id)
-  }, [localList])
+    const item = activeLocalList[index]
+    if (!item) return
+    const downloadDir = getDownloadDir()
+    const listId = isInDownloadDir(item.meta?.filePath ?? item.id, downloadDir) ? LIST_IDS.DOWNLOAD : LIST_IDS.LOCAL
+    void playListById(listId, item.id)
+  }, [activeLocalList])
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Button style={[styles.scanBtn, { backgroundColor: theme['c-primary-alpha-900'], opacity: scanning ? 0.5 : 1 }]} onPress={handleScan} disabled={scanning}>
-          <Text size={13} color={theme['c-primary']}>{scanning ? t('download_scanning') : (isLocalTab ? t('download_scan_saved') : t('download_scan_local'))}</Text>
+          <Text size={13} color={theme['c-primary']}>{scanning ? t('download_scanning') : (filter === 'downloaded' ? t('download_scan_saved') : (filter === 'all' ? t('download_scan_local') : t('download_scan_tip')))}</Text>
         </Button>
         {scanning ? <Loading size={14} style={styles.headerLoading} /> : null}
       </View>
       <FilterBar active={filter} onSwitch={setFilter} />
       {isLocalTab
         ? <FlatList
-            data={localList}
+            data={activeLocalList}
             renderItem={({ item, index }) => <LocalItem item={item} index={index} onPress={handlePlayLocal} />}
             keyExtractor={item => item.id}
             style={styles.mainList}
