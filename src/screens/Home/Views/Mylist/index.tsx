@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react'
+import { Dimensions } from 'react-native'
 import settingState from '@/store/setting/state'
 import MusicList from './MusicList'
 import MyList from './MyList'
 import { useTheme } from '@/store/theme/hook'
 import DrawerLayoutFixed, { type DrawerLayoutFixedType } from '@/components/common/DrawerLayoutFixed'
 import { COMPONENT_IDS } from '@/config/constant'
-import { scaleSizeW } from '@/utils/pixelRatio'
 import type { InitState as CommonState } from '@/store/common/state'
 
-const MAX_WIDTH = scaleSizeW(400)
+const MAX_WIDTH = Dimensions.get('window').width
 
 export default () => {
   const drawer = useRef<DrawerLayoutFixedType>(null)
@@ -57,7 +57,7 @@ export default () => {
       ref={drawer}
       visibleNavNames={[COMPONENT_IDS.home]}
       // drawerWidth={width}
-      widthPercentage={0.82}
+      widthPercentage={1}
       widthPercentageMax={MAX_WIDTH}
       drawerPosition={settingState.setting['common.drawerLayoutPosition']}
       renderNavigationView={navigationView}

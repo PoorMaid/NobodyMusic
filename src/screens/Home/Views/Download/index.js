@@ -58,7 +58,7 @@ const TaskItem = memo(({ task }) => {
       case 'run':
         return formatSize(task.downloaded) + '/' + formatSize(task.total) + '  ' + (task.speed || '')
       case 'waiting': return t('download_list_waiting')
-      case 'error': return t('download_list_error')
+      case 'error': return (task.statusText ? task.statusText : '') || t('download_list_error')
       case 'completed': return t('download_list_completed')
       default: return ''
     }

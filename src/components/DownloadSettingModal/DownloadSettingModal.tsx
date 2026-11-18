@@ -39,8 +39,8 @@ const DownloadSettingModal = forwardRef<DownloadSettingModalType, DownloadSettin
     show(info: SelectInfo) {
       setTitle(info.title || t('download_quality'))
       setQuality(info.quality || defaultQuality)
-      setDownloadPic(info.downloadPic !== false)
-      setDownloadLyric(info.downloadLyric !== false)
+      if (info.downloadPic != null) setDownloadPic(info.downloadPic)
+      if (info.downloadLyric != null) setDownloadLyric(info.downloadLyric)
       requestAnimationFrame(() => {
         dialogRef.current?.setVisible(true)
       })
@@ -81,7 +81,7 @@ const DownloadSettingModal = forwardRef<DownloadSettingModalType, DownloadSettin
           marginBottom={scaleSizeH(8)}
         />
         <Button style={[styles.confirmBtn, { backgroundColor: theme['c-primary'] }]} onPress={handleConfirm}>
-          <Text size={14} color={theme['c-primary-font']}>{t('download_confirm')}</Text>
+          <Text size={14} color={'#ffffff'}>{t('download_confirm')}</Text>
         </Button>
       </ScrollView>
     </Dialog>
@@ -90,7 +90,7 @@ const DownloadSettingModal = forwardRef<DownloadSettingModalType, DownloadSettin
 DownloadSettingModal.displayName = 'DownloadSettingModal'
 export default DownloadSettingModal
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: scaleSizeW(16), paddingBottom: scaleSizeH(16) },
+  content: { flexShrink: 1, paddingHorizontal: scaleSizeW(16), paddingBottom: scaleSizeH(16) },
   label: { marginTop: scaleSizeH(8), marginBottom: scaleSizeH(8) },
   qualityRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: scaleSizeH(12) },
   qualityBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14), marginRight: scaleSizeW(8), marginBottom: scaleSizeH(8) },

@@ -54,7 +54,7 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
   const selectInfoRef = useRef<SelectInfo>(initSelectInfo as SelectInfo)
   const [menus, setMenus] = useState<Menus>([])
   const downloadModalRef = useRef<DownloadSettingModalRefType>(null)
-  const pendingDownloadRef = useRef<LX.Music.MusicInfoOnline[]>([])
+  const pendingDownloadRef = useRef<LX.Music.MusicInfo[]>([])
 
   useImperativeHandle(ref, () => ({
     show(selectInfo, position) {
@@ -125,9 +125,10 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
           const granted = await requestStoragePermission()
           if (granted === false) toast('未授予存储权限，可能无法保存文件')
           else if (granted === null) toast('存储权限被永久拒绝，请到系统设置中开启')
-          pendingDownloadRef.current = (selectInfo.single
+          const selList = (selectInfo.selectedList ?? []) as LX.Music.MusicInfoOnline[]
+          pendingDownloadRef.current = (selectInfo.single || selList.length === 0)
             ? [selectInfo.musicInfo]
-            : selectInfo.selectedList) as LX.Music.MusicInfoOnline[]
+            : selList
           downloadModalRef.current?.show({
             quality,
             title: selectInfo.single ? undefined : t('download_unified_setting'),
@@ -192,9 +193,11 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
           pendingDownloadRef.current = []
           let added = 0
           for (const m of list) {
-            if (downloadAction.addTask(m, quality, { downloadPic, downloadLyric })) added++
+            if (m.source == 'local') continue
+            if (downloadAction.addTask(m as LX.Music.MusicInfoOnline, quality, { downloadPic, downloadLyric })) added++
           }
-          if (list.length > 1) toast(`已加入 ${added} 首到下载列表`)
+          if (added === 0) toast('加入下载失败，请检查存储权限或重试')
+          else if (list.length > 1) toast(`已加入 ${added} 首到下载列表`)
         }}
       />
     </>

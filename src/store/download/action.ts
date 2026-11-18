@@ -92,12 +92,49 @@ const writeTags = async(task: DownloadTask) => {
     }
   }
 }
+const getQualityLadder = (quality: LX.Quality): LX.Quality[] => {
+  switch (quality) {
+    case 'flac24bit':
+      return ['flac24bit', 'flac', '320k', '128k']
+    case 'flac':
+    case 'ape':
+    case 'wav':
+      return [quality, 'flac', '320k', '128k'].filter((q, i, arr) => arr.indexOf(q) === i) as LX.Quality[]
+    case '320k':
+      return ['320k', '128k']
+    case '192k':
+      return ['192k', '128k']
+    case '128k':
+      return ['128k']
+  }
+}
+const resolveUrlWithFallback = async(task: DownloadTask) => {
+  const ladder = getQualityLadder(task.quality)
+  let lastErr: any = null
+  for (const quality of ladder) {
+    try {
+      const url = await getMusicUrl({ musicInfo: task.musicInfo, quality, isRefresh: false })
+      if (url) {
+        const ext = getExtByQuality(quality)
+        if (ext !== task.ext) {
+          const name = buildFileName(task.musicInfo, ext)
+          task.ext = ext
+          task.fileName = name
+        }
+        return url
+      }
+      lastErr = new Error('empty url (' + quality + ')')
+    } catch (err: any) {
+      lastErr = err
+    }
+  }
+  throw lastErr || new Error('empty url')
+}
 const startTask = async(task: DownloadTask) => {
   task.jobId = null
   updateTask(task, { status: 'run', statusText: '下载中', progress: 0, speed: '0 B/s' })
   try {
-    let url = await getMusicUrl({ musicInfo: task.musicInfo, quality: task.quality, isRefresh: true })
-    if (!url) throw new Error('empty url')
+    const url = await resolveUrlWithFallback(task)
     const dir = getDownloadDir()
     const usePublic = isPublicStoragePath(dir)
     task.filePath = `${dir}/${task.fileName}`
@@ -110,11 +147,12 @@ const startTask = async(task: DownloadTask) => {
       }
       task.filePath = filePath
     }
-    const dl = usePublic
-      ? { promise: downloadToPublic(url, dir, task.fileName, dlOptions(task)) }
-      : downloadFile(url, task.filePath, dlOptions(task))
-    const res = await dl.promise
-    if (res.statusCode && res.statusCode >= 400) throw new Error('http ' + res.statusCode)
+    if (usePublic) {
+      await downloadToPublic(url, dir, task.fileName, dlOptions(task))
+    } else {
+      const res = await downloadFile(url, task.filePath, dlOptions(task)).promise
+      if (res.statusCode && res.statusCode >= 400) throw new Error('http ' + res.statusCode)
+    }
     updateTask(task, { status: 'completed', statusText: '已完成', progress: 100, speed: '' })
     void writeTags(task)
   } catch (err: any) {
