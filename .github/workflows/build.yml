@@ -79,9 +79,7 @@ jobs:
             Nobody Music 自动构建（${{ steps.ver.outputs.tag }}）
             版本 ${{ steps.ver.outputs.version }} (versionCode ${{ steps.ver.outputs.code }})
             本次更新：
-            - 下载页新增「已下载音乐」标签，单独扫描 App 下载目录
-            - 下载页改为 6 个标签独立切换：已下载音乐 / 下载中 / 全部 / 等待中 / 失败 / 已完成
-            - 原「下载任务区 + 本地音乐区」合并为单个列表区
-            - 扫描时显示进度动画，列表逐批增长，不再长时间无反馈
+            - 修复顺序播放 / 列表循环 / 随机播放只播已听过的歌，不接着播当前列表下一首
+            - 排行榜、歌单等在线列表播完后可正常继续
           files: android/app/build/outputs/apk/release/*.apk
           make_latest: true

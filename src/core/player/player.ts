@@ -355,7 +355,7 @@ export const getNextPlayMusicInfo = async(): Promise<LX.Player.PlayMusicInfo | n
       break
     }
 
-    if (index < playedList.length) return playedList[index]
+    // 不再回放已播放列表
   }
   // const isCheckFile = findNum > 2 // 针对下载列表，如果超过两次都碰到无效歌曲，则过滤整个列表内的无效歌曲
   let { filteredList, playerIndex } = await filterList({ // 过滤已播放歌曲
@@ -451,10 +451,7 @@ export const playNext = async(isAutoToggle = false): Promise<void> => {
       break
     }
 
-    if (index < playedList.length) {
-      await handlePlayNext(playedList[index])
-      return
-    }
+    // 不再回放已播放列表，仅清理失效项，继续走正常列表逻辑
   }
   if (randomNextMusicInfo.info) {
     await handlePlayNext(randomNextMusicInfo.info)
@@ -542,10 +539,7 @@ export const playPrev = async(isAutoToggle = false): Promise<void> => {
       break
     }
 
-    if (index > -1) {
-      await handlePlayNext(playedList[index])
-      return
-    }
+    // 不再回放已播放列表，仅清理失效项
   }
 
   // const isCheckFile = findNum > 2
