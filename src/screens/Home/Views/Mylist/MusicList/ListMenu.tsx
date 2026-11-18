@@ -122,13 +122,16 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
       case 'download':
         void (async() => {
           const quality = settingState.setting['download.quality']
+          console.log('[NB-DL] download case start, quality=' + quality + ' music=' + selectInfo.musicInfo?.name + ' source=' + selectInfo.musicInfo?.source)
           const granted = await requestStoragePermission()
+          console.log('[NB-DL] perm=' + String(granted))
           if (granted === false) toast('未授予存储权限，可能无法保存文件')
           else if (granted === null) toast('存储权限被永久拒绝，请到系统设置中开启')
           const selList = (selectInfo.selectedList ?? []) as LX.Music.MusicInfoOnline[]
           pendingDownloadRef.current = (selectInfo.single || selList.length === 0)
             ? [selectInfo.musicInfo]
             : selList
+          console.log('[NB-DL] pending.len=' + pendingDownloadRef.current.length + ' refNull=' + (downloadModalRef.current == null))
           downloadModalRef.current?.show({
             quality,
             title: selectInfo.single ? undefined : t('download_unified_setting'),
@@ -190,12 +193,18 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
         ref={downloadModalRef}
         onConfirm={(quality, downloadPic, downloadLyric) => {
           const list = pendingDownloadRef.current
+          console.log('[NB-DL] ListMenu onConfirm fired, list.len=' + list.length, 'q=' + quality)
           pendingDownloadRef.current = []
           let added = 0
           for (const m of list) {
             if (m.source == 'local') continue
-            if (downloadAction.addTask(m as LX.Music.MusicInfoOnline, quality, { downloadPic, downloadLyric })) added++
+            try {
+              if (downloadAction.addTask(m as LX.Music.MusicInfoOnline, quality, { downloadPic, downloadLyric })) added++
+            } catch (err: any) {
+              console.log('[NB-DL] addTask threw: ' + String(err?.message || err))
+            }
           }
+          console.log('[NB-DL] added=' + added + '/' + list.length)
           if (added === 0) toast('加入下载失败，请检查存储权限或重试')
           else if (list.length > 1) toast(`已加入 ${added} 首到下载列表`)
         }}

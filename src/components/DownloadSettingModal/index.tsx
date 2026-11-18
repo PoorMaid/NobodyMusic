@@ -10,10 +10,12 @@ export default forwardRef<DownloadSettingModalRefType, ModalProps>(({ onConfirm 
   const [visible, setVisible] = useState(false)
   useImperativeHandle(ref, () => ({
     show(info) {
+      console.log('[NB-DL] outer show, visible=' + visible + ' refNull=' + (modalRef.current == null))
       if (visible) modalRef.current?.show(info)
       else {
         setVisible(true)
         requestAnimationFrame(() => {
+          console.log('[NB-DL] outer rAF refNull=' + (modalRef.current == null))
           modalRef.current?.show(info)
         })
       }

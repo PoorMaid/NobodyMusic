@@ -47,8 +47,14 @@ const DownloadSettingModal = forwardRef<DownloadSettingModalType, DownloadSettin
     },
   }), [defaultQuality, t])
   const handleConfirm = () => {
+    console.log('[NB-DL] handleConfirm hit', quality, downloadPic, downloadLyric, 'hasCb=' + !!onConfirm)
     dialogRef.current?.setVisible(false)
-    onConfirm?.(quality, downloadPic, downloadLyric)
+    try {
+      onConfirm?.(quality, downloadPic, downloadLyric)
+      console.log('[NB-DL] onConfirm returned')
+    } catch (err: any) {
+      console.log('[NB-DL] onConfirm threw: ' + String(err?.message || err))
+    }
   }
   return (
     <Dialog ref={dialogRef} title={title} closeBtn={false} bgHide={true}>
