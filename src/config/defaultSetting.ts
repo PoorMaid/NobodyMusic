@@ -26,6 +26,7 @@ const defaultSetting: LX.AppSetting = {
   'player.cacheSize': '1024',
   'player.timeoutExit': '',
   'player.timeoutExitPlayed': false,
+  'player.timeoutExitQuitApp': false,
   'player.isAutoCleanPlayedList': false,
   'player.isHandleAudioFocus': true,
   'player.isEnableAudioOffload': true,

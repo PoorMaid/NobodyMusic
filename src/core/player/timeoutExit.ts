@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import BackgroundTimer from 'react-native-background-timer'
 import { exitApp } from '@/core/common'
+import { pause } from '@/core/player/player'
 import playerState from '@/store/player/state'
 import settingState from '@/store/setting/state'
 
@@ -13,13 +14,18 @@ const timeoutTools = {
   time: -1,
   timeHooks: [] as Hook[],
   exit() {
-    if (settingState.setting['player.timeoutExitPlayed']) {
-      // 勾选：停止播放并直接退出软件
-      exitApp('Timeout Exit')
-    } else {
-      // 不勾选：只停止播放
+    const waitPlayed = settingState.setting['player.timeoutExitPlayed']
+    const quitApp = settingState.setting['player.timeoutExitQuitApp']
+    if (waitPlayed) {
+      // 等当前歌曲播完再停
       global.lx.isPlayedStop = true
       this.callHooks()
+    } else {
+      // 立即停止播放
+      void pause()
+      global.lx.isPlayedStop = false
+      this.callHooks()
+      if (quitApp) exitApp('Timeout Exit')
     }
   },
   getTime() {

@@ -84,13 +84,18 @@ const TimeInput = forwardRef<TimeInputType, {}>((props, ref) => {
 const Setting = () => {
   const t = useI18n()
   const timeoutExitPlayed = useSettingValue('player.timeoutExitPlayed')
-  const onCheckChange = (check: boolean) => {
+  const timeoutExitQuitApp = useSettingValue('player.timeoutExitQuitApp')
+  const onPlayedChange = (check: boolean) => {
     updateSetting({ 'player.timeoutExitPlayed': check })
+  }
+  const onQuitAppChange = (check: boolean) => {
+    updateSetting({ 'player.timeoutExitQuitApp': check })
   }
 
   return (
     <View style={styles.checkbox}>
-      <CheckBox check={timeoutExitPlayed} label={t('timeout_exit_label_isPlayed')} onChange={onCheckChange} />
+      <CheckBox check={timeoutExitPlayed} label={t('timeout_exit_label_isPlayed')} onChange={onPlayedChange} />
+      <CheckBox check={timeoutExitQuitApp} label={t('timeout_exit_label_quit_app')} onChange={onQuitAppChange} />
     </View>
   )
 }

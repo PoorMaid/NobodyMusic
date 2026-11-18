@@ -159,6 +159,10 @@ declare global {
        * 定时暂停播放-是否等待歌曲播放完毕再暂停
        */
       'player.timeoutExitPlayed': boolean
+      /**
+       * 定时暂停播放-停止播放后是否退出软件
+       */
+      'player.timeoutExitQuitApp': boolean
 
       /**
        * 点击相同列表内的歌曲切歌时是否清空已播放列表（随机模式下列表内所有歌曲会重新参与随机）

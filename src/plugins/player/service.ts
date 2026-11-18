@@ -7,6 +7,7 @@ import { isTempId, isEmpty } from './utils'
 import { exitApp } from '@/core/common'
 import { getCurrentTrackId } from './playList'
 import { pause, play, playNext, playPrev } from '@/core/player/player'
+import settingState from '@/store/setting/state'
 
 let isInitialized = false
 
@@ -21,6 +22,16 @@ let isInitialized = false
 const handleExitApp = async(reason: string) => {
   global.lx.isPlayedStop = false
   exitApp(reason)
+}
+// 定时到点：等待播完的分支也走这里，是否退出由设置决定
+const handlePlayedStop = async() => {
+  await TrackPlayer.pause()
+  global.app_event.pause()
+  if (settingState.setting['player.timeoutExitQuitApp']) {
+    await handleExitApp('Timeout Exit')
+  } else {
+    global.lx.isPlayedStop = false
+  }
 }
 
 
@@ -105,7 +116,7 @@ const registerPlaybackService = async() => {
         // console.log('playback-state', info)
         break
     }
-    if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
+    if (global.lx.isPlayedStop) return handlePlayedStop()
 
     // console.log('currentIsPlaying', currentIsPlaying, global.lx.playInfo.isPlaying)
     // void updateMetaData(global.lx.store_playMusicInfo.musicInfo, currentIsPlaying)
@@ -114,7 +125,7 @@ const registerPlaybackService = async() => {
     // console.log('PlaybackTrackChanged====>', info)
     global.lx.playerTrackId = await getCurrentTrackId()
     if (info.track == null) return
-    if (global.lx.isPlayedStop) return handleExitApp('Timeout Exit')
+    if (global.lx.isPlayedStop) return handlePlayedStop()
 
     // console.log('global.lx.playerTrackId====>', global.lx.playerTrackId)
     if (isEmpty()) {
