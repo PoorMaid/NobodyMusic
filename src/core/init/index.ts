@@ -11,6 +11,7 @@ import { initDeeplink } from './deeplink'
 import { setApiSource } from '@/core/apiSource'
 import commonActions from '@/store/common/action'
 import settingState from '@/store/setting/state'
+import { state as userApiState } from '@/store/userApi/state'
 import { checkUpdate } from '@/core/version'
 import { bootLog } from '@/utils/bootLog'
 import { cheatTip } from '@/utils/tools'
@@ -48,9 +49,13 @@ export default async() => {
   await initUserApi(setting)
   bootLog('User Api inited.')
 
-  {
-    const st = (await import('@/store/setting/state')).default
-    setApiSource(st.setting['common.apiSource'] || setting['common.apiSource'])
+  // Nobody Music: 启动时必须落定一个生效音源，否则 UI 全部未勾选
+  // 优先用已保存的音源；没有则回退到内置音源 / 用户音源列表首项
+  const savedApiSource = setting['common.apiSource']
+  const fallbackApiSource = userApiState.list[0]?.id
+  const targetApiSource = savedApiSource || fallbackApiSource
+  if (targetApiSource) {
+    setApiSource(targetApiSource)
   }
   bootLog('Api inited.')
 

@@ -20,6 +20,10 @@ declare global {
        * api id
        */
       'common.apiSource': string
+      /**
+       * 自动挑选可用音源
+       */
+      'common.autoPickApiSource': boolean
 
       /**
        * 音源名称类型，原名、别名

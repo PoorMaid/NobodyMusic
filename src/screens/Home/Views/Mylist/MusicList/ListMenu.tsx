@@ -4,6 +4,8 @@ import Menu, { type Menus, type MenuType, type Position } from '@/components/com
 import { hasDislike } from '@/core/dislikeList'
 import { existsFile } from '@/utils/fs'
 import { hasMusicUrlByMusic } from '@/utils/data'
+import settingState from '@/store/setting/state'
+import { requestStoragePermission, toast } from '@/utils/tools'
 import { action as downloadAction } from '@/store/download'
 
 export interface SelectInfo {
@@ -115,8 +117,14 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
 
         break
       case 'download':
-        if (selectInfo.single) downloadAction.addTask(selectInfo.musicInfo, '320k')
-        else selectInfo.selectedList.forEach(m => downloadAction.addTask(m, '320k'))
+        void (async() => {
+          const quality = settingState.setting['download.quality']
+          const granted = await requestStoragePermission()
+          if (granted === false) toast('未授予存储权限，可能无法保存文件')
+          else if (granted === null) toast('存储权限被永久拒绝，请到系统设置中开启')
+          if (selectInfo.single) downloadAction.addTask(selectInfo.musicInfo as LX.Music.MusicInfoOnline, quality)
+          else selectInfo.selectedList.forEach(m => downloadAction.addTask(m as LX.Music.MusicInfoOnline, quality))
+        })()
         break
       case 'add':
         props.onAdd(selectInfo)

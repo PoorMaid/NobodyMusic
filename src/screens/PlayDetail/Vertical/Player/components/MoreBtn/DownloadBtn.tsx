@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import playerState from '@/store/player/state'
 import { action as downloadAction } from '@/store/download'
 import { state as downloadState } from '@/store/download'
+import { useSettingValue } from '@/store/setting/hook'
 import { useTheme } from '@/store/theme/hook'
-import { toast } from '@/utils/tools'
+import { toast, requestStoragePermission } from '@/utils/tools'
 import Btn from './Btn'
 
 export default () => {
   const theme = useTheme()
+  const quality = useSettingValue('download.quality')
   const musicInfo = playerState.playMusicInfo.musicInfo
   const [downloaded, setDownloaded] = useState(false)
 
@@ -26,7 +28,7 @@ export default () => {
     return () => { clearInterval(timer) }
   }, [id])
 
-  const handleDownload = () => {
+  const handleDownload = async() => {
     if (!musicInfo) return
     const target = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
     if (!('source' in target)) {
@@ -37,7 +39,13 @@ export default () => {
       toast('已下载')
       return
     }
-    const ok = downloadAction.addTask(target as LX.Music.MusicInfoOnline, '320k')
+    const granted = await requestStoragePermission()
+    if (granted === false) {
+      toast('未授予存储权限，可能无法保存文件')
+    } else if (granted === null) {
+      toast('存储权限被永久拒绝，请到系统设置中开启')
+    }
+    const ok = downloadAction.addTask(target as LX.Music.MusicInfoOnline, quality)
     toast(ok ? '已加入下载' : '已在下载列表中')
   }
 
@@ -45,7 +53,7 @@ export default () => {
     <Btn
       icon='download-2'
       color={downloaded ? theme['c-primary'] : undefined}
-      onPress={handleDownload}
+      onPress={() => { void handleDownload() }}
     />
   )
 }

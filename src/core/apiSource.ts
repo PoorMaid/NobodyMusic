@@ -37,9 +37,14 @@ export const setApiSource = (apiId: string) => {
     setUserApi(apiId).catch(err => {
       if (!global.lx.apiInitPromise[1]) global.lx.apiInitPromise[2](false)
       console.log(err)
+      // Nobody Music: 加载失败也要落定勾选态，避免 UI 一直显示未勾选
       let api = apiSourceInfo.find(api => !api.disabled)
-      if (!api) return
-      if (api.id != settingState.setting['common.apiSource']) setApiSource(api.id)
+      if (api) {
+        if (api.id != settingState.setting['common.apiSource']) setApiSource(api.id)
+      } else if (settingState.setting['common.apiSource'] != apiId) {
+        settingState.setting['common.apiSource'] = apiId
+        updateSetting({ 'common.apiSource': apiId })
+      }
     })
   } else {
     // @ts-expect-error
@@ -52,9 +57,10 @@ export const setApiSource = (apiId: string) => {
 
   if (apiId != settingState.setting['common.apiSource']) {
     updateSetting({ 'common.apiSource': apiId })
-    requestAnimationFrame(() => {
-      global.state_event.apiSourceUpdated(apiId)
-    })
   }
+  // Nobody Music: apiSourceUpdated 必须无条件发出，否则换源后播放层仍用旧音源
+  requestAnimationFrame(() => {
+    global.state_event.apiSourceUpdated(apiId)
+  })
 }
 

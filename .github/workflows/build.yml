@@ -3,6 +3,9 @@ on:
   push:
     branches: [ master, main ]
   workflow_dispatch:
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -58,3 +61,15 @@ jobs:
           name: NobodyMusic-APK
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+      - name: Publish Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: music-app-latest
+          name: Nobody Music 最新版
+          body: |
+            Nobody Music 自动构建（music-app-latest）
+            版本 10.2.1 (versionCode 24)
+            修复：下载音质跟随设置、存储权限预申请、SAF 重名不覆盖、下载目录不重复弹窗
+          files: android/app/build/outputs/apk/release/*.apk
+          make_latest: true

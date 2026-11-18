@@ -1,5 +1,6 @@
 import { type InitParams, onScriptAction, sendAction, type ResponseParams, type UpdateInfoParams, type RequestParams } from '@/utils/nativeModules/userApi'
 import { log, setUserApiList, setUserApiStatus } from '@/core/userApi'
+import { updateSetting } from '@/core/common'
 import settingState from '@/store/setting/state'
 import BackgroundTimer from 'react-native-background-timer'
 import { fetchData } from './request'
@@ -75,8 +76,10 @@ export default async(setting: LX.AppSetting) => {
     // console.log(status, message, info)
     setUserApiStatus(status, errorMessage)
     if (!info) return
+    // Nobody Music: 必须走 updateSetting 触发 configUpdated，否则设置页勾选态不刷新
     if (info.id !== settingState.setting['common.apiSource']) {
       settingState.setting['common.apiSource'] = info.id
+      updateSetting({ 'common.apiSource': info.id })
     }
     if (status) {
       if (info.sources) {
@@ -255,12 +258,29 @@ export default async(setting: LX.AppSetting) => {
     }
   })
 
-  // Nobody Music: 启动时自动在线导入内置音源（首次或版本升级时），失败不影响启动
+  // Nobody Music: 先用本地已有音源立即完成初始化，不阻塞首屏
   try {
-    const { ensureBuiltinSources } = await import('@/sources/builtin/ensure')
-    await ensureBuiltinSources()
+    setUserApiList(await getUserApiList())
   } catch (err) {
-    log.warn('ensureBuiltinSources failed: ' + (err as Error).message)
+    log.warn('initUserApi setUserApiList failed: ' + (err as Error).message)
   }
-  setUserApiList(await getUserApiList())
+  // Nobody Music: 音源导入/更新改为启动后的后台任务，不参与启动等待
+  setTimeout(() => {
+    void (async() => {
+      try {
+        const { ensureBuiltinSources } = await import('@/sources/builtin/ensure')
+        await ensureBuiltinSources()
+        // Nobody Music: 列表刷新后若仍无生效音源，用首项兜底，避免一直全未勾选
+        if (!settingState.setting['common.apiSource']) {
+          const first = (await getUserApiList())[0]
+          if (first) {
+            settingState.setting['common.apiSource'] = first.id
+            updateSetting({ 'common.apiSource': first.id })
+          }
+        }
+      } catch (err) {
+        log.warn('ensureBuiltinSources failed: ' + (err as Error).message)
+      }
+    })()
+  }, 1500)
 }

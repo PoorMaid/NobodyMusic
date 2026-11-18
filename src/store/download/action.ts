@@ -1,5 +1,5 @@
 import { getMusicUrl } from '@/core/music/online'
-import { downloadFile, stopDownload, existsFile, mkdir, externalStorageDirectoryPath } from '@/utils/fs'
+import { downloadFile, downloadToPublic, stopDownload, existsFile, mkdir, isPublicStoragePath, externalStorageDirectoryPath } from '@/utils/fs'
 import settingState from '@/store/setting/state'
 import state, { type DownloadTask, type InitState } from './state'
 
@@ -42,6 +42,24 @@ const updateTask = (task: DownloadTask, patch: Partial<DownloadTask>) => {
   emitUpdate()
 }
 
+const dlOptions = (task: DownloadTask) => ({
+  progressInterval: 500,
+  progressDivider: 1,
+  begin: (res: { jobId: number, contentLength: number }) => {
+    task.jobId = res.jobId
+    updateTask(task, { total: res.contentLength || 0 })
+  },
+  progress: (res: { bytesWritten: number, contentLength: number }) => {
+    const total = task.total || res.contentLength || 0
+    const progress = total > 0 ? Math.min(100, Math.round(res.bytesWritten / total * 100)) : 0
+    updateTask(task, {
+      downloaded: res.bytesWritten,
+      progress,
+      speed: (res.bytesWritten / Math.max(1, (Date.now() - task.startAt) / 1000) / 1024).toFixed(1) + ' KB/s',
+    })
+  },
+})
+
 const startTask = async(task: DownloadTask) => {
   task.jobId = null
   updateTask(task, { status: 'run', statusText: '下载中', progress: 0, speed: '0 B/s' })
@@ -49,30 +67,20 @@ const startTask = async(task: DownloadTask) => {
     let url = await getMusicUrl({ musicInfo: task.musicInfo, quality: task.quality, isRefresh: true })
     if (!url) throw new Error('empty url')
     const dir = getDownloadDir()
-    await mkdir(dir)
-    let filePath = `${dir}/${task.fileName}`
-    if (await existsFile(filePath)) {
-      filePath = `${dir}/${task.fileName.replace(/(\.[^.]+)$/, '')}(${seq}).$1`
-      task.fileName = filePath.split('/').pop() || task.fileName
+    const usePublic = isPublicStoragePath(dir)
+    task.filePath = `${dir}/${task.fileName}`
+    if (!usePublic) {
+      await mkdir(dir)
+      let filePath = `${dir}/${task.fileName}`
+      if (await existsFile(filePath)) {
+        filePath = `${dir}/${task.fileName.replace(/(\.[^.]+)$/, '')}(${seq}).$1`
+        task.fileName = filePath.split('/').pop() || task.fileName
+      }
+      task.filePath = filePath
     }
-    task.filePath = filePath
-    const dl = downloadFile(url, filePath, {
-      progressInterval: 500,
-      progressDivider: 1,
-      begin: (res) => {
-        task.jobId = res.jobId
-        updateTask(task, { total: res.contentLength || 0 })
-      },
-      progress: (res) => {
-        const total = task.total || res.contentLength || 0
-        const progress = total > 0 ? Math.min(100, Math.round(res.bytesWritten / total * 100)) : 0
-        updateTask(task, {
-          downloaded: res.bytesWritten,
-          progress,
-          speed: (res.bytesWritten / Math.max(1, (Date.now() - task.startAt) / 1000) / 1024).toFixed(1) + ' KB/s',
-        })
-      },
-    })
+    const dl = usePublic
+      ? { promise: downloadToPublic(url, dir, task.fileName, dlOptions(task)) }
+      : downloadFile(url, task.filePath, dlOptions(task))
     const res = await dl.promise
     if (res.statusCode && res.statusCode >= 400) throw new Error('http ' + res.statusCode)
     updateTask(task, { status: 'completed', statusText: '已完成', progress: 100, speed: '' })

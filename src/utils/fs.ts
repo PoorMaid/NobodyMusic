@@ -59,6 +59,53 @@ export const writeFile = async(path: string, data: string, encoding?: Encoding) 
 
 export const appendFile = async(path: string, data: string, encoding?: Encoding) => FileSystem.appendFile(path, data, encoding)
 
+export const selectDownloadFolder = async() => AndroidScoped.openDocumentTree(true)
+
+export const isPublicStoragePath = (path: string) => !path.startsWith('content://') && /^\/(storage|sdcard)/.test(path)
+
+const exportFile = async(srcPath: string, folderUri: string, name: string) => {
+  let baseUri = folderUri
+  if (!baseUri) {
+    const folder = await selectDownloadFolder()
+    if (!folder) return null
+    baseUri = folder.path
+  }
+  if (!baseUri.endsWith('/')) baseUri += '/'
+  let finalName = name
+  try {
+    const list = await FileSystem.ls(baseUri)
+    const taken = new Set(list.map(f => f.name))
+    if (taken.has(finalName)) {
+      const dot = finalName.lastIndexOf('.')
+      const base = dot > 0 ? finalName.slice(0, dot) : finalName
+      const ext = dot > 0 ? finalName.slice(dot) : ''
+      let seq = 1
+      while (taken.has(`${base}(${seq})${ext}`)) seq++
+      finalName = `${base}(${seq})${ext}`
+    }
+  } catch {}
+  const target = `${baseUri}${finalName}`
+  await FileSystem.cp(srcPath, target)
+  return target
+}
+
+export const downloadToPublic = async(url: string, dirPath: string, fileName: string, options: Omit<RNFS.DownloadFileOptions, 'fromUrl' | 'toFile'> = {}) => {
+  const tmpPath = `${Dirs.CacheDir}/dl_${Date.now()}_${fileName.replace(/[^\w.\-]/g, '_')}`
+  const dl = downloadFile(url, tmpPath, options)
+  const res = await dl.promise
+  if (res.statusCode && res.statusCode >= 400) {
+    await unlink(tmpPath).catch(() => {})
+    throw new Error('http ' + res.statusCode)
+  }
+  try {
+    const target = await exportFile(tmpPath, dirPath, fileName)
+    if (!target) throw new Error('选择保存目录失败')
+    return target
+  } finally {
+    await unlink(tmpPath).catch(() => {})
+  }
+}
+
 export const downloadFile = (url: string, path: string, options: Omit<RNFS.DownloadFileOptions, 'fromUrl' | 'toFile'> = {}) => {
   if (!options.headers) {
     options.headers = {

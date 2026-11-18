@@ -1,7 +1,5 @@
-/**
- * Nobody Music 内置在线音源订阅清单。
- * 启动时自动从这些 URL 拉取脚本并注册为「用户自定义音源」（固定 id，覆盖式更新）。
- */
+const RAW = 'https://raw.githubusercontent.com/pdone/lx-music-source/main'
+
 export interface BuiltinSourceDef {
   key: string
   id: string
@@ -9,17 +7,55 @@ export interface BuiltinSourceDef {
   url: string
 }
 
-const RAW = 'https://raw.githubusercontent.com/pdone/lx-music-source/main'
+const NAME_MAP: Record<string, string> = {
+  juhe: '聚合',
+  lx: 'LX',
+  ikun: 'i坤',
+  grass: 'Grass',
+  flower: 'Flower',
+  huibq: 'Huibq',
+  sixyin: 'SixYin',
+  qdy: 'qdy',
+  yuningxi: 'Yun',
+  qingliang: '清凉',
+  xinghai: '星海',
+  suyin: '随音',
+  xinglan: '星岚',
+  jiexiang: '解耦',
+  hyw: 'H氪',
+  huanyin: '幻音',
+  helloworld: 'Hello',
+  fish: 'Fish',
+  feichangdao: '非常道',
+  changqing: '长青',
+}
 
-export const BUILTIN_SOURCES: BuiltinSourceDef[] = [
-  { key: 'juhe', id: 'user_api_builtin_juhe', name: '聚合API', url: `${RAW}/juhe/latest.js` },
-  { key: 'grass', id: 'user_api_builtin_grass', name: 'Grass', url: `${RAW}/grass/latest.js` },
-  { key: 'ikun', id: 'user_api_builtin_ikun', name: 'Ikun', url: `${RAW}/ikun/latest.js` },
-  { key: 'lx', id: 'user_api_builtin_lx', name: 'LX', url: `${RAW}/lx/latest.js` },
-  { key: 'flower', id: 'user_api_builtin_flower', name: 'Flower', url: `${RAW}/flower/latest.js` },
-  { key: 'huibq', id: 'user_api_builtin_huibq', name: 'Huibq', url: `${RAW}/huibq/latest.js` },
-  { key: 'sixyin', id: 'user_api_builtin_sixyin', name: 'SixYin', url: `${RAW}/sixyin/latest.js` },
+const KEYS = [
+  'juhe', 'lx', 'ikun', 'grass', 'flower', 'huibq', 'sixyin', 'qdy',
+  'yuningxi', 'qingliang', 'xinghai', 'suyin', 'xinglan', 'jiexiang',
+  'hyw', 'huanyin', 'helloworld', 'fish', 'feichangdao', 'changqing',
 ]
 
+export const URL_OVERRIDE: Record<string, string> = {
+  xinghai: 'https://zrcdy.dpdns.org/lx/xinghai-music-sourcev2.3.19.js',
+}
+
+const def = (key: string): BuiltinSourceDef => ({
+  key,
+  id: `user_api_builtin_${key}`,
+  name: NAME_MAP[key] || key,
+  url: URL_OVERRIDE[key] || `${RAW}/${key}/latest.js`,
+})
+
+export const BUILTIN_SOURCES: BuiltinSourceDef[] = KEYS.map(def)
+
 export const BUILTIN_SOURCE_IDS = BUILTIN_SOURCES.map(s => s.id)
-export const isBuiltinSourceId = (id: string) => BUILTIN_SOURCE_IDS.includes(id)
+
+export const BUILTIN_UPDATE_FILE = 'builtin_sources_urls.json'
+
+export const BUILTIN_UPDATE_URLS = [
+  `https://raw.githubusercontent.com/PoorMaid/NobodyMusic/master/${BUILTIN_UPDATE_FILE}`,
+  `https://cdn.jsdelivr.net/gh/PoorMaid/NobodyMusic@master/${BUILTIN_UPDATE_FILE}`,
+]
+
+export const isBuiltinSourceId = (id: string): boolean => id.startsWith('user_api_builtin_')
