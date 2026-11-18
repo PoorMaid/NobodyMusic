@@ -20,11 +20,10 @@ const normalize = (raw: any): BuiltinSourceDef | null => {
 const applyOverride = (defs: BuiltinSourceDef[]): BuiltinSourceDef[] => {
   if (!defs.length) return defs
   const localMap = new Map(BUILTIN_SOURCES.map(s => [s.id, s]))
-  const out = defs.map(d => {
+  return defs.map(d => {
     const local = localMap.get(d.id)
-    return local && local.url !== d.url && /zrcdy\.dpdns\.org/.test(local.url) ? { ...d, url: local.url } : d
+    return local && local.url !== d.url && URL_OVERRIDE[local.key] ? { ...d, url: local.url } : d
   })
-  return out
 }
 
 const loadSourceDefs = async(): Promise<BuiltinSourceDef[]> => {
@@ -34,6 +33,7 @@ const loadSourceDefs = async(): Promise<BuiltinSourceDef[]> => {
       const resp = await promise
       const text = typeof resp.body === 'string' ? resp.body : JSON.stringify(resp.body)
       const data = JSON.parse(text)
+
       const arr = Array.isArray(data) ? data : (Array.isArray(data?.sources) ? data.sources : [])
       const defs: BuiltinSourceDef[] = []
       const seen = new Set<string>()
@@ -70,8 +70,7 @@ const importOne = async(def: BuiltinSourceDef, oldScript: string | null): Promis
   try {
     const script = await fetchScript(def.url)
     if (!script) return false
-    const pinned = !!URL_OVERRIDE[def.key]
-    if (oldScript && oldScript === script && !pinned) return true
+    if (oldScript && oldScript === script) return true
     await saveBuiltinUserApi({
       id: def.id,
       name: def.name,

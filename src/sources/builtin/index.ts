@@ -35,7 +35,6 @@ const KEYS = [
   'yuningxi', 'qingliang', 'xinghai', 'suyin', 'xinglan', 'jiexiang',
   'hyw', 'huanyin', 'helloworld', 'fish', 'feichangdao', 'changqing',
 ]
-
 export const URL_OVERRIDE: Record<string, string> = {
   xinghai: 'https://zrcdy.dpdns.org/lx/xinghai-music-sourcev2.3.19.js',
 }

@@ -49,12 +49,12 @@ export default async() => {
   await initUserApi(setting)
   bootLog('User Api inited.')
 
-  // Nobody Music: 启动时必须落定一个生效音源，否则 UI 全部未勾选
-  // 优先用已保存的音源；没有则回退到内置音源 / 用户音源列表首项
+  // Nobody Music: 启动时先落定一个生效音源，避免 UI 全部未勾选
+  // 已保存音源优先，其次用户/内置音源列表首项；探测挑选交给后台 autoPick
   const savedApiSource = setting['common.apiSource']
   const fallbackApiSource = userApiState.list[0]?.id
   const targetApiSource = savedApiSource || fallbackApiSource
-  if (targetApiSource) {
+  if (targetApiSource && settingState.setting['common.apiSource'] !== targetApiSource) {
     setApiSource(targetApiSource)
   }
   bootLog('Api inited.')
