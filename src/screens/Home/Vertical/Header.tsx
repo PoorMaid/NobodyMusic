@@ -1,8 +1,9 @@
 import { View, TouchableOpacity } from 'react-native'
 import { useTheme } from '@/store/theme/hook'
 import { useNavActiveId, useStatusbarHeight } from '@/store/common/hook'
+import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
-import { createStyle } from '@/utils/tools'
+import { createStyle, confirmDialog, exitApp } from '@/utils/tools'
 import { Icon } from '@/components/common/Icon'
 import Text from '@/components/common/Text'
 import StatusBar from '@/components/common/StatusBar'
@@ -17,11 +18,26 @@ const headerComponents: Partial<Record<CommonState['navActiveId'], React.ReactNo
   nav_search: <SearchTypeSelector />,
 }
 
+const goHome = () => {
+  exitApp()
+}
+
 const Header = () => {
   const theme = useTheme()
   const id = useNavActiveId()
   const t = useI18n()
   const statusBarHeight = useStatusbarHeight()
+  const showBackBtn = useSettingValue('common.showBackBtn')
+  const showExitBtn = useSettingValue('common.showExitBtn')
+  const handleExit = () => {
+    void confirmDialog({
+      message: t('exit_app_tip'),
+      confirmButtonText: t('list_remove_tip_button'),
+    }).then(isExit => {
+      if (!isExit) return
+      exitApp()
+    })
+  }
 
   return (
     <>
@@ -35,13 +51,33 @@ const Header = () => {
           <Text style={styles.title} size={20}>{t(id)}</Text>
         </View>
         {headerComponents[id] ?? null}
-        <TouchableOpacity
-          style={[styles.btn, { backgroundColor: theme['c-primary-light-400-alpha-700'] }]}
-          activeOpacity={0.8}
-          onPress={() => { setNavActiveId('nav_setting') }}
-        >
-          <Icon color={theme['c-primary-font-active']} name="setting" size={17} />
-        </TouchableOpacity>
+        <View style={styles.right}>
+          {showBackBtn ? (
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: theme['c-primary-light-400-alpha-700'] }]}
+              activeOpacity={0.8}
+              onPress={goHome}
+            >
+              <Icon color={theme['c-primary-font-active']} name="home" size={17} />
+            </TouchableOpacity>
+          ) : null}
+          {showExitBtn ? (
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: theme['c-primary-light-400-alpha-700'] }]}
+              activeOpacity={0.8}
+              onPress={handleExit}
+            >
+              <Icon color={theme['c-primary-font-active']} name="exit2" size={17} />
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity
+            style={[styles.btn, { backgroundColor: theme['c-primary-light-400-alpha-700'] }]}
+            activeOpacity={0.8}
+            onPress={() => { setNavActiveId('nav_setting') }}
+          >
+            <Icon color={theme['c-primary-font-active']} name="setting" size={17} />
+          </TouchableOpacity>
+        </View>
       </View>
     </>
   )
@@ -57,8 +93,14 @@ const styles = createStyle({
   },
   left: {
     flex: 1,
+    flexShrink: 1,
     justifyContent: 'center',
     height: '100%',
+  },
+  right: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 0,
   },
   title: {
     fontWeight: '700',

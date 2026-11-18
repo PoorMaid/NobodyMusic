@@ -18,7 +18,6 @@ const HANDLE_SIZE = scaleSizeW(34)
 const OUTER_PADDING_TOP = scaleSizeH(4)
 const OUTER_PADDING_BOTTOM = scaleSizeH(4)
 
-export const BOTTOM_NAV_HEIGHT = BAR_HEIGHT + OUTER_PADDING_TOP + OUTER_PADDING_BOTTOM
 export const BOTTOM_NAV_COLLAPSED_HEIGHT = HANDLE_SIZE + OUTER_PADDING_TOP + OUTER_PADDING_BOTTOM
 
 const NavItem = ({ id, icon, active }: { id: NAV_ID_Type, icon: string, active: boolean }) => {
@@ -137,10 +136,6 @@ const BottomNav = () => {
 
 const styles = createStyle({
   outer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     paddingHorizontal: 10,
     paddingTop: OUTER_PADDING_TOP,
     paddingBottom: OUTER_PADDING_BOTTOM,

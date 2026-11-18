@@ -1,7 +1,7 @@
 {
   "name": "nobody-music",
-  "version": "10.2.4",
-  "versionCode": 27,
+  "version": "10.2.5",
+  "versionCode": 28,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",

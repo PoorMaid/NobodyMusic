@@ -5,14 +5,11 @@ import Button from '@/components/common/Button'
 import { useTheme } from '@/store/theme/hook'
 import { useDownloadList } from '@/store/download/hook'
 import { action as downloadAction } from '@/store/download'
-import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 import { scaleSizeW, scaleSizeH } from '@/utils/pixelRatio'
 import { LIST_IDS } from '@/config/constant'
 import { getListMusics } from '@/core/list'
 import { playListById } from '@/core/player/player'
-import { updateSetting } from '@/core/common'
-import { MUSIC_TOGGLE_MODE_LIST, MUSIC_TOGGLE_MODE } from '@/config/constant'
 import ChoosePath from '@/components/common/ChoosePath'
 import { handleImportMediaFile } from '@/screens/Home/Views/Mylist/MyList/listAction'
 
@@ -31,31 +28,6 @@ const formatSize = size => {
   if (size < 1024 * 1024 * 1024) return (size / 1024 / 1024).toFixed(1) + ' MB'
   return (size / 1024 / 1024 / 1024).toFixed(2) + ' GB'
 }
-
-const PlayModeBtn = memo(() => {
-  const theme = useTheme()
-  const t = useI18n()
-  const togglePlayMethod = useSettingValue('player.togglePlayMethod')
-  const label = useMemo(() => {
-    switch (togglePlayMethod) {
-      case MUSIC_TOGGLE_MODE.listLoop: return t('play_list_loop')
-      case MUSIC_TOGGLE_MODE.random: return t('play_list_random')
-      case MUSIC_TOGGLE_MODE.list: return t('play_list_order')
-      case MUSIC_TOGGLE_MODE.singleLoop: return t('play_single_loop')
-      default: return t('play_single')
-    }
-  }, [togglePlayMethod, t])
-  const next = useCallback(() => {
-    let index = MUSIC_TOGGLE_MODE_LIST.indexOf(togglePlayMethod)
-    if (++index >= MUSIC_TOGGLE_MODE_LIST.length) index = 0
-    updateSetting({ 'player.togglePlayMethod': MUSIC_TOGGLE_MODE_LIST[index] })
-  }, [togglePlayMethod])
-  return (
-    <Button style={[styles.modeBtn, { borderColor: theme['c-primary-light-900-alpha-200'] }]} onPress={next}>
-      <Text size={12} color={theme['c-primary']}>{label}</Text>
-    </Button>
-  )
-})
 
 const FilterBar = memo(({ active, onSwitch }) => {
   const theme = useTheme()
@@ -188,7 +160,6 @@ export default memo(() => {
         <Button style={[styles.scanBtn, { backgroundColor: theme['c-primary-alpha-900'] }]} onPress={handleScan}>
           <Text size={13} color={theme['c-primary']}>{t('download_scan_local')}</Text>
         </Button>
-        <PlayModeBtn />
       </View>
       <FilterBar active={filter} onSwitch={setFilter} />
       <FlatList
@@ -221,13 +192,12 @@ export default memo(() => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8) },
-  scanBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14), marginRight: scaleSizeW(8) },
-  modeBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14), borderWidth: 1 },
+  scanBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14) },
   filterBar: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: scaleSizeW(12), paddingBottom: scaleSizeH(6) },
   filterBtn: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(5), borderRadius: scaleSizeW(12), marginRight: scaleSizeW(8), marginBottom: scaleSizeH(6) },
   downloadList: { flex: 1 },
   localList: { flex: 2 },
-  listContent: { paddingBottom: scaleSizeH(120) },
+  listContent: { paddingBottom: scaleSizeH(16) },
   taskItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8), borderBottomWidth: StyleSheet.hairlineWidth },
   taskInfo: { flex: 1, marginRight: scaleSizeW(8) },
   progressBar: { height: scaleSizeH(3), borderRadius: scaleSizeH(2), marginVertical: scaleSizeH(4), overflow: 'hidden' },
