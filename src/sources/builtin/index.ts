@@ -31,8 +31,9 @@ const NAME_MAP: Record<string, string> = {
 }
 
 const KEYS = [
+  'yuningxi',
   'juhe', 'lx', 'ikun', 'grass', 'flower', 'huibq', 'sixyin', 'qdy',
-  'yuningxi', 'qingliang', 'xinghai', 'suyin', 'xinglan', 'jiexiang',
+  'qingliang', 'xinghai', 'suyin', 'xinglan', 'jiexiang',
   'hyw', 'huanyin', 'helloworld', 'fish', 'feichangdao', 'changqing',
 ]
 export const URL_OVERRIDE: Record<string, string> = {

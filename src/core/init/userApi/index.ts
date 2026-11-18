@@ -270,7 +270,10 @@ export default async(setting: LX.AppSetting) => {
       try {
         const { ensureBuiltinSources } = await import('@/sources/builtin/ensure')
         await ensureBuiltinSources()
-        // Nobody Music: 列表刷新后若仍无生效音源，用首项兜底，避免一直全未勾选
+        // Nobody Music: 导入完成后逐个探测，首个可用的自动落定并勾选
+        const { autoPickApiSource } = await import('@/sources/builtin/autoPick')
+        await autoPickApiSource()
+        // Nobody Music: 探测全失败时用列表首项兜底，避免一直全未勾选
         if (!settingState.setting['common.apiSource']) {
           const first = (await getUserApiList())[0]
           if (first) {
