@@ -9,13 +9,18 @@ import { useI18n } from '@/lang'
 import { scaleSizeW, scaleSizeH } from '@/utils/pixelRatio'
 import { LIST_IDS } from '@/config/constant'
 import { getListMusics } from '@/core/list'
+import { useListFetching } from '@/store/list/hook'
+import Loading from '@/components/common/Loading'
 import { playListById } from '@/core/player/player'
 import ChoosePath from '@/components/common/ChoosePath'
 import { handleImportMediaFile } from '@/screens/Home/Views/Mylist/MyList/listAction'
 
+const { getDownloadDir } = downloadAction
+
 const FILTERS = [
-  { key: 'all', label: 'download_list_all' },
+  { key: 'downloaded', label: 'download_tab_downloaded' },
   { key: 'run', label: 'download_list_run' },
+  { key: 'all', label: 'download_list_all' },
   { key: 'waiting', label: 'download_list_waiting' },
   { key: 'error', label: 'download_list_error' },
   { key: 'completed', label: 'download_list_completed' },
@@ -106,9 +111,10 @@ const LocalItem = memo(({ item, index, onPress }) => {
 export default memo(() => {
   const theme = useTheme()
   const t = useI18n()
-  const { tasks, activeList } = useDownloadList()
-  const [filter, setFilter] = useState('all')
+  const { tasks } = useDownloadList()
+  const [filter, setFilter] = useState('downloaded')
   const [localList, setLocalList] = useState([])
+  const scanning = useListFetching(LIST_IDS.DOWNLOAD)
   const choosePathRef = useRef(null)
 
   const loadLocal = useCallback(() => {
@@ -120,31 +126,43 @@ export default memo(() => {
   useEffect(() => {
     loadLocal()
     const handleUpdate = () => { loadLocal() }
+    const handleListMusic = listId => {
+      if (listId === LIST_IDS.DOWNLOAD) handleUpdate()
+    }
     global.app_event.on('downloadListUpdate', handleUpdate)
+    global.app_event.on('list_music_add', handleListMusic)
+    global.app_event.on('list_music_update', handleListMusic)
+    global.app_event.on('list_music_remove', handleListMusic)
     return () => {
       global.app_event.off('downloadListUpdate', handleUpdate)
+      global.app_event.off('list_music_add', handleListMusic)
+      global.app_event.off('list_music_update', handleListMusic)
+      global.app_event.off('list_music_remove', handleListMusic)
     }
   }, [loadLocal])
 
+  const isLocalTab = filter === 'downloaded'
+
   const filteredTasks = useMemo(() => {
-    if (activeList === 'all' && filter === 'all') return tasks
-    return tasks.filter(task => {
-      if (filter === 'all') return true
-      if (filter === 'run') return task.status === 'run'
-      if (filter === 'waiting') return task.status === 'waiting'
-      if (filter === 'error') return task.status === 'error'
-      if (filter === 'completed') return task.status === 'completed'
-      return true
-    })
-  }, [tasks, activeList, filter])
+    if (filter === 'all') return tasks
+    if (filter === 'run') return tasks.filter(task => task.status === 'run')
+    if (filter === 'waiting') return tasks.filter(task => task.status === 'waiting')
+    if (filter === 'error') return tasks.filter(task => task.status === 'error')
+    if (filter === 'completed') return tasks.filter(task => task.status === 'completed')
+    return tasks
+  }, [tasks, filter])
 
   const handleScan = useCallback(() => {
+    if (filter === 'downloaded') {
+      void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('nav_local_music') }, getDownloadDir()).then(loadLocal)
+      return
+    }
     choosePathRef.current?.show({
       title: t('download_scan_tip'),
       dirOnly: true,
       isPersist: true,
     })
-  }, [t])
+  }, [t, filter, loadLocal])
 
   const handleScanPath = useCallback(path => {
     void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('nav_local_music') }, path).then(loadLocal)
@@ -157,33 +175,38 @@ export default memo(() => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button style={[styles.scanBtn, { backgroundColor: theme['c-primary-alpha-900'] }]} onPress={handleScan}>
-          <Text size={13} color={theme['c-primary']}>{t('download_scan_local')}</Text>
+        <Button style={[styles.scanBtn, { backgroundColor: theme['c-primary-alpha-900'], opacity: scanning ? 0.5 : 1 }]} onPress={handleScan} disabled={scanning}>
+          <Text size={13} color={theme['c-primary']}>{scanning ? t('download_scanning') : (isLocalTab ? t('download_scan_saved') : t('download_scan_local'))}</Text>
         </Button>
+        {scanning ? <Loading size={14} style={styles.headerLoading} /> : null}
       </View>
       <FilterBar active={filter} onSwitch={setFilter} />
-      <FlatList
-        data={filteredTasks}
-        renderItem={({ item }) => <TaskItem task={item} />}
-        keyExtractor={item => item.id}
-        style={styles.downloadList}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.empty}><Text size={13} color={theme['c-font-label']}>{t('download_empty')}</Text></View>
-        }
-      />
-      <View style={[styles.divider, { backgroundColor: theme['c-primary-light-900-alpha-200'] }]} />
-      <Text style={styles.sectionTitle} size={13} color={theme['c-font-label']}>{t('nav_local_music')}</Text>
-      <FlatList
-        data={localList}
-        renderItem={({ item, index }) => <LocalItem item={item} index={index} onPress={handlePlayLocal} />}
-        keyExtractor={item => item.id}
-        style={styles.localList}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.empty}><Text size={13} color={theme['c-font-label']}>{t('download_local_empty')}</Text></View>
-        }
-      />
+      {isLocalTab
+        ? <FlatList
+            data={localList}
+            renderItem={({ item, index }) => <LocalItem item={item} index={index} onPress={handlePlayLocal} />}
+            keyExtractor={item => item.id}
+            style={styles.mainList}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                {scanning
+                  ? <Loading size={22} label={t('download_scanning')} />
+                  : <Text size={13} color={theme['c-font-label']}>{t('download_local_empty')}</Text>}
+              </View>
+            }
+          />
+        : <FlatList
+            data={filteredTasks}
+            renderItem={({ item }) => <TaskItem task={item} />}
+            keyExtractor={item => item.id}
+            style={styles.mainList}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.empty}><Text size={13} color={theme['c-font-label']}>{t('download_empty')}</Text></View>
+            }
+          />
+      }
       <ChoosePath ref={choosePathRef} onConfirm={handleScanPath} />
     </View>
   )
@@ -193,10 +216,10 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8) },
   scanBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14) },
+  headerLoading: { marginLeft: scaleSizeW(8) },
   filterBar: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: scaleSizeW(12), paddingBottom: scaleSizeH(6) },
   filterBtn: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(5), borderRadius: scaleSizeW(12), marginRight: scaleSizeW(8), marginBottom: scaleSizeH(6) },
-  downloadList: { flex: 1 },
-  localList: { flex: 2 },
+  mainList: { flex: 1 },
   listContent: { paddingBottom: scaleSizeH(16) },
   taskItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8), borderBottomWidth: StyleSheet.hairlineWidth },
   taskInfo: { flex: 1, marginRight: scaleSizeW(8) },
@@ -205,7 +228,5 @@ const styles = StyleSheet.create({
   taskActions: { flexDirection: 'row', alignItems: 'center' },
   taskBtn: { paddingHorizontal: scaleSizeW(8), paddingVertical: scaleSizeH(4) },
   localItem: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(9), borderBottomWidth: StyleSheet.hairlineWidth },
-  divider: { height: StyleSheet.hairlineWidth, marginTop: scaleSizeH(4) },
-  sectionTitle: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8) },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: scaleSizeH(24) },
 })

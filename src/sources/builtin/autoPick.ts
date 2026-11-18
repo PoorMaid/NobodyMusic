@@ -2,13 +2,20 @@ import { BUILTIN_SOURCES } from './index'
 import { getUserApiList } from '@/utils/data'
 import settingState from '@/store/setting/state'
 import { setApiSource } from '@/core/apiSource'
+import { setUserApiStatus } from '@/core/userApi'
 import { updateSetting } from '@/core/common'
 import { log } from '@/utils/log'
 
 const PROBE_TIMEOUT = 8_000
 const POLL_INTERVAL = 200
 
-const waitApiStatus = async(): Promise<boolean> => {
+const waitApiStatus = async(promise: Promise<boolean>): Promise<boolean> => {
+  const result = await Promise.race([
+    promise,
+    new Promise<boolean>(resolve => setTimeout(() => { resolve(false) }, PROBE_TIMEOUT)),
+  ])
+  if (result) return true
+  // 超时或失败：轮询兑底，但必须以仍处于 initing 为前题
   const startAt = Date.now()
   while (Date.now() - startAt < PROBE_TIMEOUT) {
     if (global.lx.apiInitPromise[1]) return true
@@ -41,9 +48,8 @@ export const autoPickApiSource = async(): Promise<void> => {
 
   for (const id of probeList) {
     log.info('auto pick user api: try ' + id)
-    const waiter = waitApiStatus()
     setApiSource(id)
-    const ok = await waiter
+    const ok = await waitApiStatus(global.lx.apiInitPromise[0])
     if (ok) {
       settingState.setting['common.apiSource'] = id
       updateSetting({ 'common.apiSource': id })
@@ -51,10 +57,13 @@ export const autoPickApiSource = async(): Promise<void> => {
       return
     }
     log.warn('auto pick user api: failed ' + id)
+    // 探测失败必须落定状态，否则设置页永久显示“初始化中”
+    setUserApiStatus(false, 'failed')
   }
 
   // 全部失败：仍要放开初始化闸门，否则后续一直报 source init failed
   log.warn('auto pick user api: none available')
   global.lx.apiInitPromise[1] = true
   global.lx.apiInitPromise[0] = Promise.resolve(true)
+  setUserApiStatus(false, 'failed')
 }

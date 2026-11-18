@@ -31,10 +31,11 @@ const NAME_MAP: Record<string, string> = {
 }
 
 const KEYS = [
+  'fish',
   'yuningxi',
   'juhe', 'lx', 'ikun', 'grass', 'flower', 'huibq', 'sixyin', 'qdy',
   'qingliang', 'xinghai', 'suyin', 'xinglan', 'jiexiang',
-  'hyw', 'huanyin', 'helloworld', 'fish', 'feichangdao', 'changqing',
+  'hyw', 'huanyin', 'helloworld', 'feichangdao', 'changqing',
 ]
 export const URL_OVERRIDE: Record<string, string> = {
   xinghai: 'https://zrcdy.dpdns.org/lx/xinghai-music-sourcev2.3.19.js',

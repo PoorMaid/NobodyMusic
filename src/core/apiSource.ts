@@ -20,6 +20,13 @@ export const setApiSource = (apiId: string) => {
       }
     })
     global.lx.qualityList = {}
+    // Nobody Music: 脚本可能永不回调 init（网络/脚本异常），加超时兑底，避免卡在初始化中
+    setTimeout(() => {
+      if (!global.lx.apiInitPromise[1]) {
+        console.log('[NBSRC] init timeout, force release ' + apiId)
+        global.lx.apiInitPromise[2](false)
+      }
+    }, 12_000)
   } else {
     global.lx.apiInitPromise[0] = Promise.resolve(true)
     global.lx.apiInitPromise[1] = true

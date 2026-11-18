@@ -191,16 +191,22 @@ const handleUpdateMusics = async(filePaths: string[],
 }
 export const handleImportMediaFile = async(listInfo: LX.List.MyListInfo, path: string) => {
   setFetchingListStatus(listInfo.id, true)
-  const files = await scanAudioFiles(path)
-  if (files.length) {
-    const throttleUpdateMusics = createThrottleAddMusics(async(listId, musicInfos) => {
-      return updateListMusics(musicInfos.map(info => ({ id: listId, musicInfo: info })))
-    }, async(listId, errorPath) => {
-      return removeListMusics(listId, errorPath)
-    }, listInfo.id)
-    await addListMusics(listInfo.id, files.map(buildLocalMusicInfoByFilePath), settingState.setting['list.addMusicLocationType'])
-    toast(global.i18n.t('list_select_local_file_temp_add_tip', { total: files.length }), 'long')
-    await handleUpdateMusics(files.map(f => f.path), throttleUpdateMusics)
-  } else toast(global.i18n.t('list_select_local_file_empty_tip'), 'long')
-  setFetchingListStatus(listInfo.id, false)
+  try {
+    const files = await scanAudioFiles(path)
+    if (files.length) {
+      const throttleUpdateMusics = createThrottleAddMusics(async(listId, musicInfos) => {
+        return updateListMusics(musicInfos.map(info => ({ id: listId, musicInfo: info })))
+      }, async(listId, errorPath) => {
+        return removeListMusics(listId, errorPath)
+      }, listInfo.id)
+      await addListMusics(listInfo.id, files.map(buildLocalMusicInfoByFilePath), settingState.setting['list.addMusicLocationType'])
+      toast(global.i18n.t('list_select_local_file_temp_add_tip', { total: files.length }), 'long')
+      await handleUpdateMusics(files.map(f => f.path), throttleUpdateMusics)
+    } else toast(global.i18n.t('list_select_local_file_empty_tip'), 'long')
+  } catch (err: any) {
+    console.log('[NBLOCAL] scan failed: ' + String(err?.message || err))
+    toast(global.i18n.t('list_select_local_file_empty_tip'), 'long')
+  } finally {
+    setFetchingListStatus(listInfo.id, false)
+  }
 }
