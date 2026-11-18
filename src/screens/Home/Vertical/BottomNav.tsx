@@ -85,12 +85,11 @@ const NavItem = ({ id, icon, active }: { id: NAV_ID_Type, icon: string, active: 
   )
 }
 
-const BottomNav = ({ onVisibleChange }: { onVisibleChange?: (visible: boolean) => void }) => {
+const BottomNav = () => {
   const theme = useTheme()
   const activeId = useNavActiveId()
   const [open, setOpen] = useState(true)
   const slide = useRef(new Animated.Value(1)).current
-
   const toggle = useCallback(() => {
     setOpen(prev => {
       const next = !prev
@@ -100,14 +99,16 @@ const BottomNav = ({ onVisibleChange }: { onVisibleChange?: (visible: boolean) =
         easing: next ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
         useNativeDriver: true,
       }).start()
-      onVisibleChange && onVisibleChange(next)
       return next
     })
-  }, [slide, onVisibleChange])
-
+  }, [slide])
+  const handleSlide = slide.interpolate({
+    inputRange: [0, 1],
+    outputRange: [HANDLE_SIZE * 0.7, 0],
+  })
   return (
-    <View style={styles.outer}>
-      <View style={styles.row}>
+    <View style={styles.outer} pointerEvents='box-none'>
+      <Animated.View style={[styles.row, { transform: [{ translateY: handleSlide }] }]} pointerEvents='box-none'>
         <Animated.View style={{
           flex: 1,
           opacity: slide,
@@ -129,13 +130,17 @@ const BottomNav = ({ onVisibleChange }: { onVisibleChange?: (visible: boolean) =
             style={{ transform: [{ rotate: open ? '90deg' : '-90deg' }] }}
           />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   )
 }
 
 const styles = createStyle({
   outer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
     paddingHorizontal: 10,
     paddingTop: OUTER_PADDING_TOP,
     paddingBottom: OUTER_PADDING_BOTTOM,

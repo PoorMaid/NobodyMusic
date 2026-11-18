@@ -5,24 +5,17 @@ import { setApiSource } from '@/core/apiSource'
 import { updateSetting } from '@/core/common'
 import { log } from '@/utils/log'
 
-const PROBE_TIMEOUT = 25_000
+const PROBE_TIMEOUT = 8_000
+const POLL_INTERVAL = 200
 
-const waitApiStatus = (): Promise<boolean> => new Promise(resolve => {
-  let settled = false
-  const finish = (result: boolean) => {
-    if (settled) return
-    settled = true
-    global.lx.apiInitPromise[1] = true
-    resolve(!!result)
+const waitApiStatus = async(): Promise<boolean> => {
+  const startAt = Date.now()
+  while (Date.now() - startAt < PROBE_TIMEOUT) {
+    if (global.lx.apiInitPromise[1]) return true
+    await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL))
   }
-  global.lx.apiInitPromise[1] = false
-  global.lx.apiInitPromise[2] = (result: boolean) => {
-    finish(result)
-  }
-  setTimeout(() => {
-    finish(false)
-  }, PROBE_TIMEOUT)
-})
+  return false
+}
 
 const isBuiltinId = (id: string) => BUILTIN_SOURCES.some(def => def.id === id)
 
@@ -39,6 +32,11 @@ export const autoPickApiSource = async(): Promise<void> => {
 
   const manual = settingState.setting['common.autoPickApiSource'] === false
   const current = settingState.setting['common.apiSource']
+  // 已有可用音源且已初始化成功：直接沿用，不再探测、不再改源
+  if (current && order.includes(current) && global.lx.apiInitPromise[1]) {
+    log.info('auto pick user api: keep current ' + current)
+    return
+  }
   const probeList = manual && order.includes(current) ? [current] : order
 
   for (const id of probeList) {

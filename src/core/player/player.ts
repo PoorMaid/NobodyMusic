@@ -237,6 +237,8 @@ const handlePlay = async() => {
       cacheSize: settingState.setting['player.cacheSize'] ? parseInt(settingState.setting['player.cacheSize']) : 0,
       isHandleAudioFocus: settingState.setting['player.isHandleAudioFocus'],
       isEnableAudioOffload: settingState.setting['player.isEnableAudioOffload'],
+      eqEnabled: settingState.setting['player.isEnableEqualizer'],
+      eqGains: settingState.setting['player.equalizerGains'],
     })
   }
 

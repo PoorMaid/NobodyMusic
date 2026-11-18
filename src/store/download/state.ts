@@ -15,6 +15,8 @@ export interface DownloadTask {
   speed: string
   jobId: number | null
   startAt: number
+  downloadPic?: boolean
+  downloadLyric?: boolean
 }
 
 export interface InitState {

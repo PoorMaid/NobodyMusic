@@ -1,5 +1,6 @@
 import TrackPlayer from 'react-native-track-player'
 import { updateOptions, setVolume, setPlaybackRate, migratePlayerCache } from './utils'
+import { getEqualizerBridge } from './equalizer'
 
 // const listenEvent = () => {
 //   TrackPlayer.addEventListener('playback-error', err => {
@@ -16,12 +17,14 @@ import { updateOptions, setVolume, setPlaybackRate, migratePlayerCache } from '.
 //   })
 // }
 
-const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus, isEnableAudioOffload }: {
+const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus, isEnableAudioOffload, eqEnabled, eqGains }: {
   volume: number
   playRate: number
   cacheSize: number
   isHandleAudioFocus: boolean
   isEnableAudioOffload: boolean
+  eqEnabled?: boolean
+  eqGains?: number[]
 }) => {
   if (global.lx.playerStatus.isIniting || global.lx.playerStatus.isInitialized) return
   global.lx.playerStatus.isIniting = true
@@ -41,6 +44,16 @@ const initial = async({ volume, playRate, cacheSize, isHandleAudioFocus, isEnabl
   await setVolume(volume)
   await setPlaybackRate(playRate)
   // listenEvent()
+
+  // restore saved equalizer settings after player is ready
+  try {
+    const gains = Array.isArray(eqGains) ? eqGains : []
+    if (eqEnabled || gains.some(g => g !== 0)) {
+      await getEqualizerBridge().apply(!!eqEnabled, gains)
+    }
+  } catch (err) {
+    console.warn('equalizer restore error', err)
+  }
 }
 
 

@@ -69,7 +69,12 @@ jobs:
           name: Nobody Music 最新版
           body: |
             Nobody Music 自动构建（music-app-latest）
-            版本 10.2.1 (versionCode 24)
-            修复：下载音质跟随设置、存储权限预申请、SAF 重名不覆盖、下载目录不重复弹窗
+            版本 10.2.4 (versionCode 27)
+            本次更新：
+- 多选批量下载接入统一设置弹窗（封面/歌词/音质一次生效）
+- 底部播放条改为悬浮贴底，消除遮挡内容的空白占位
+- 本地音乐与收录列表融合页
+- 音源初始化8秒超时+自动落定兜底
+- 均衡器启动恢复
           files: android/app/build/outputs/apk/release/*.apk
           make_latest: true

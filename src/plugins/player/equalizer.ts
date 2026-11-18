@@ -4,6 +4,7 @@ import TrackPlayer, {
   eqGetGains,
   eqIsEnabled,
   eqGetBandLabels,
+  eqGetStatus,
 } from 'react-native-track-player'
 
 export interface EqualizerBridge {
@@ -12,6 +13,7 @@ export interface EqualizerBridge {
   getGains: () => Promise<number[]>
   isEnabled: () => Promise<boolean>
   getBandLabels: () => Promise<string[]>
+  getStatus: () => Promise<{ enabled: boolean, passthrough: boolean, pcmEncoding: number }>
   apply: (enabled: boolean, gains: number[]) => Promise<void>
 }
 
@@ -31,12 +33,15 @@ const bridge: EqualizerBridge = {
   async getBandLabels() {
     return eqGetBandLabels()
   },
+  async getStatus() {
+    return eqGetStatus()
+  },
   async apply(enabled, gains) {
     try {
       await eqSetGains(gains)
       await eqSetEnabled(enabled)
     } catch (err) {
-      console.log('equalizer apply error', err)
+      console.warn('equalizer apply error', err)
     }
   },
 }

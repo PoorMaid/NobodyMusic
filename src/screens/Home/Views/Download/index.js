@@ -1,122 +1,241 @@
-import { useMemo } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, FlatList, StyleSheet } from 'react-native'
 import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
-import Image from '@/components/common/Image'
 import { useTheme } from '@/store/theme/hook'
 import { useDownloadList } from '@/store/download/hook'
-import { action } from '@/store/download'
-import { scaleSizeW, scaleSizeH, setSpText } from '@/utils/pixelRatio'
+import { action as downloadAction } from '@/store/download'
+import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
+import { scaleSizeW, scaleSizeH } from '@/utils/pixelRatio'
+import { LIST_IDS } from '@/config/constant'
+import { getListMusics } from '@/core/list'
+import { playListById } from '@/core/player/player'
+import { updateSetting } from '@/core/common'
+import { MUSIC_TOGGLE_MODE_LIST, MUSIC_TOGGLE_MODE } from '@/config/constant'
+import ChoosePath from '@/components/common/ChoosePath'
+import { handleImportMediaFile } from '@/screens/Home/Views/Mylist/MyList/listAction'
 
 const FILTERS = [
-  { id: 'all', label: 'download_list_all' },
-  { id: 'run', label: 'download_list_run' },
-  { id: 'waiting', label: 'download_list_waiting' },
-  { id: 'error', label: 'download_list_error' },
-  { id: 'completed', label: 'download_list_completed' },
+  { key: 'all', label: 'download_list_all' },
+  { key: 'run', label: 'download_list_run' },
+  { key: 'waiting', label: 'download_list_waiting' },
+  { key: 'error', label: 'download_list_error' },
+  { key: 'completed', label: 'download_list_completed' },
 ]
 
-const formatSize = (bytes) => {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let i = 0
-  let n = bytes
-  while (n >= 1024 && i < units.length - 1) {
-    n /= 1024
-    i++
-  }
-  return n.toFixed(i === 0 ? 0 : 1) + ' ' + units[i]
+const formatSize = size => {
+  if (!size || size < 0) return '0 B'
+  if (size < 1024) return size + ' B'
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
+  if (size < 1024 * 1024 * 1024) return (size / 1024 / 1024).toFixed(1) + ' MB'
+  return (size / 1024 / 1024 / 1024).toFixed(2) + ' GB'
 }
 
-const FilterBar = ({ active, onChange }) => {
+const PlayModeBtn = memo(() => {
+  const theme = useTheme()
+  const t = useI18n()
+  const togglePlayMethod = useSettingValue('player.togglePlayMethod')
+  const label = useMemo(() => {
+    switch (togglePlayMethod) {
+      case MUSIC_TOGGLE_MODE.listLoop: return t('play_list_loop')
+      case MUSIC_TOGGLE_MODE.random: return t('play_list_random')
+      case MUSIC_TOGGLE_MODE.list: return t('play_list_order')
+      case MUSIC_TOGGLE_MODE.singleLoop: return t('play_single_loop')
+      default: return t('play_single')
+    }
+  }, [togglePlayMethod, t])
+  const next = useCallback(() => {
+    let index = MUSIC_TOGGLE_MODE_LIST.indexOf(togglePlayMethod)
+    if (++index >= MUSIC_TOGGLE_MODE_LIST.length) index = 0
+    updateSetting({ 'player.togglePlayMethod': MUSIC_TOGGLE_MODE_LIST[index] })
+  }, [togglePlayMethod])
+  return (
+    <Button style={[styles.modeBtn, { borderColor: theme['c-primary-light-900-alpha-200'] }]} onPress={next}>
+      <Text size={12} color={theme['c-primary']}>{label}</Text>
+    </Button>
+  )
+})
+
+const FilterBar = memo(({ active, onSwitch }) => {
   const theme = useTheme()
   const t = useI18n()
   return (
     <View style={styles.filterBar}>
       {FILTERS.map(f => {
-        const selected = active === f.id
+        const isActive = active === f.key
         return (
           <Button
-            key={f.id}
-            style={[styles.filterBtn, { backgroundColor: selected ? theme['c-primary-alpha-900'] : theme['c-primary-light-900-alpha-200'] }]}
-            onPress={() => onChange(f.id)}
+            key={f.key}
+            style={[styles.filterBtn, { backgroundColor: isActive ? theme['c-primary-alpha-900'] : theme['c-primary-light-900-alpha-200'] }]}
+            onPress={() => onSwitch(f.key)}
           >
-            <Text size={13} color={selected ? theme['c-primary'] : theme['c-font-label']}>{t(f.label)}</Text>
+            <Text size={12} color={isActive ? theme['c-primary'] : theme['c-font-label']}>{t(f.label)}</Text>
           </Button>
         )
       })}
     </View>
   )
-}
+})
 
-const TaskItem = ({ task }) => {
+const TaskItem = memo(({ task }) => {
   const theme = useTheme()
   const t = useI18n()
-  const pic = task.musicInfo.meta && task.musicInfo.meta.picUrl
+  const statusText = useMemo(() => {
+    switch (task.status) {
+      case 'run':
+        return formatSize(task.downloaded) + '/' + formatSize(task.total) + '  ' + (task.speed || '')
+      case 'waiting': return t('download_list_waiting')
+      case 'error': return t('download_list_error')
+      case 'completed': return t('download_list_completed')
+      default: return ''
+    }
+  }, [task.status, task.downloaded, task.total, task.speed, t])
+  const handleRetry = useCallback(() => {
+    downloadAction.retryTask(task.id)
+  }, [task.id])
+  const handleRemove = useCallback(() => {
+    downloadAction.removeTask(task.id)
+  }, [task.id])
   return (
-    <View style={[styles.item, { borderBottomColor: theme['c-border-background'] }]}>
-      <Image url={pic} style={styles.pic} />
-      <View style={styles.itemInfo}>
+    <View style={[styles.taskItem, { borderBottomColor: theme['c-primary-light-900-alpha-200'] }]}>
+      <View style={styles.taskInfo}>
         <Text size={14} numberOfLines={1}>{task.musicInfo.name}</Text>
-        <Text size={12} color={theme['c-font-label']} numberOfLines={1}>{task.musicInfo.singer}</Text>
-        <View style={styles.progressRow}>
-          <View style={[styles.progressBg, { backgroundColor: theme['c-primary-light-900-alpha-200'] }]}>
-            <View style={[styles.progressFg, { width: (task.progress || 0) + '%', backgroundColor: theme['c-primary'] }]} />
-          </View>
-          <Text size={11} color={theme['c-font-label']} style={styles.progressText}>{task.progress || 0}%</Text>
+        <Text size={11} color={theme['c-font-label']} numberOfLines={1}>{task.musicInfo.singer}</Text>
+        <View style={[styles.progressBar, { backgroundColor: theme['c-primary-light-900-alpha-200'] }]}>
+          <View style={[styles.progressInner, { backgroundColor: theme['c-primary'], width: (task.progress || 0) + '%' }]} />
         </View>
-        <Text size={11} color={theme['c-font-label']} numberOfLines={1}>
-          {task.statusText}{task.status === 'run' ? '  ' + formatSize(task.downloaded) + '/' + formatSize(task.total) + '  ' + task.speed : ''}
-        </Text>
+        <Text size={11} color={theme['c-font-label']} numberOfLines={1}>{statusText}</Text>
       </View>
-      <View style={styles.actions}>
-        {task.status === 'error'
-          ? <Button style={styles.actionBtn} onPress={() => action.retryTask(task.id)}><Text size={12} color={theme['c-primary']}>{t('download_retry')}</Text></Button>
-          : null}
-        <Button style={styles.actionBtn} onPress={() => action.removeTask(task.id)}><Text size={12} color={theme['c-font-label']}>{t('download_remove')}</Text></Button>
+      <View style={styles.taskActions}>
+        {task.status === 'error' ? (
+          <Button style={styles.taskBtn} onPress={handleRetry}>
+            <Text size={12} color={theme['c-primary']}>{t('download_retry')}</Text>
+          </Button>
+        ) : null}
+        <Button style={styles.taskBtn} onPress={handleRemove}>
+          <Text size={12} color={theme['c-font-label']}>{t('download_remove')}</Text>
+        </Button>
       </View>
     </View>
   )
-}
+})
 
-export default () => {
+const LocalItem = memo(({ item, index, onPress }) => {
+  const theme = useTheme()
+  return (
+    <Button style={[styles.localItem, { borderBottomColor: theme['c-primary-light-900-alpha-200'] }]} onPress={() => onPress(index)}>
+      <Text size={14} numberOfLines={1}>{item.name}</Text>
+      <Text size={11} color={theme['c-font-label']} numberOfLines={1}>{item.singer}</Text>
+    </Button>
+  )
+})
+
+export default memo(() => {
   const theme = useTheme()
   const t = useI18n()
   const { tasks, activeList } = useDownloadList()
-  const list = useMemo(() => {
-    return activeList === 'all' ? tasks : tasks.filter(x => x.status === activeList)
-  }, [tasks, activeList])
+  const [filter, setFilter] = useState('all')
+  const [localList, setLocalList] = useState([])
+  const choosePathRef = useRef(null)
+
+  const loadLocal = useCallback(() => {
+    void getListMusics(LIST_IDS.DOWNLOAD).then(list => {
+      setLocalList([...list])
+    }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    loadLocal()
+    const handleUpdate = () => { loadLocal() }
+    global.app_event.on('downloadListUpdate', handleUpdate)
+    return () => {
+      global.app_event.off('downloadListUpdate', handleUpdate)
+    }
+  }, [loadLocal])
+
+  const filteredTasks = useMemo(() => {
+    if (activeList === 'all' && filter === 'all') return tasks
+    return tasks.filter(task => {
+      if (filter === 'all') return true
+      if (filter === 'run') return task.status === 'run'
+      if (filter === 'waiting') return task.status === 'waiting'
+      if (filter === 'error') return task.status === 'error'
+      if (filter === 'completed') return task.status === 'completed'
+      return true
+    })
+  }, [tasks, activeList, filter])
+
+  const handleScan = useCallback(() => {
+    choosePathRef.current?.show({
+      title: t('download_scan_tip'),
+      dirOnly: true,
+      isPersist: true,
+    })
+  }, [t])
+
+  const handleScanPath = useCallback(path => {
+    void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('nav_local_music') }, path).then(loadLocal)
+  }, [loadLocal, t])
+
+  const handlePlayLocal = useCallback(index => {
+    void playListById(LIST_IDS.DOWNLOAD, localList[index].id)
+  }, [localList])
+
   return (
-    <View style={[styles.container, { backgroundColor: theme['c-content-background'] }]}>
-      <FilterBar active={activeList} onChange={action.setActiveList} />
-      {list.length
-        ? <FlatList
-          data={list}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => <TaskItem task={item} />}
-          contentContainerStyle={styles.listContent}
-        />
-        : <View style={styles.empty}>
-          <Text size={14} color={theme['c-font-label']}>{t('download_empty')}</Text>
-        </View>}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Button style={[styles.scanBtn, { backgroundColor: theme['c-primary-alpha-900'] }]} onPress={handleScan}>
+          <Text size={13} color={theme['c-primary']}>{t('download_scan_local')}</Text>
+        </Button>
+        <PlayModeBtn />
+      </View>
+      <FilterBar active={filter} onSwitch={setFilter} />
+      <FlatList
+        data={filteredTasks}
+        renderItem={({ item }) => <TaskItem task={item} />}
+        keyExtractor={item => item.id}
+        style={styles.downloadList}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.empty}><Text size={13} color={theme['c-font-label']}>{t('download_empty')}</Text></View>
+        }
+      />
+      <View style={[styles.divider, { backgroundColor: theme['c-primary-light-900-alpha-200'] }]} />
+      <Text style={styles.sectionTitle} size={13} color={theme['c-font-label']}>{t('nav_local_music')}</Text>
+      <FlatList
+        data={localList}
+        renderItem={({ item, index }) => <LocalItem item={item} index={index} onPress={handlePlayLocal} />}
+        keyExtractor={item => item.id}
+        style={styles.localList}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <View style={styles.empty}><Text size={13} color={theme['c-font-label']}>{t('download_local_empty')}</Text></View>
+        }
+      />
+      <ChoosePath ref={choosePathRef} onConfirm={handleScanPath} />
     </View>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  filterBar: { flexDirection: 'row', flexWrap: 'wrap', gap: scaleSizeW(8), paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(10) },
-  filterBtn: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(6), borderRadius: scaleSizeW(14) },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8) },
+  scanBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14), marginRight: scaleSizeW(8) },
+  modeBtn: { paddingHorizontal: scaleSizeW(14), paddingVertical: scaleSizeH(7), borderRadius: scaleSizeW(14), borderWidth: 1 },
+  filterBar: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: scaleSizeW(12), paddingBottom: scaleSizeH(6) },
+  filterBtn: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(5), borderRadius: scaleSizeW(12), marginRight: scaleSizeW(8), marginBottom: scaleSizeH(6) },
+  downloadList: { flex: 1 },
+  localList: { flex: 2 },
   listContent: { paddingBottom: scaleSizeH(120) },
-  item: { flexDirection: 'row', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(10), borderBottomWidth: StyleSheet.hairlineWidth },
-  pic: { width: scaleSizeW(46), height: scaleSizeW(46), borderRadius: scaleSizeW(6) },
-  itemInfo: { flex: 1, marginLeft: scaleSizeW(10), justifyContent: 'space-between', gap: scaleSizeH(2) },
-  progressRow: { flexDirection: 'row', alignItems: 'center', gap: scaleSizeW(6) },
-  progressBg: { flex: 1, height: scaleSizeH(4), borderRadius: 2, overflow: 'hidden' },
-  progressFg: { height: '100%' },
-  progressText: { minWidth: scaleSizeW(34), textAlign: 'right', fontSize: setSpText(11) },
-  actions: { justifyContent: 'center', alignItems: 'flex-end', gap: scaleSizeH(6) },
-  actionBtn: { paddingHorizontal: scaleSizeW(8), paddingVertical: scaleSizeH(4) },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: scaleSizeH(8) },
+  taskItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8), borderBottomWidth: StyleSheet.hairlineWidth },
+  taskInfo: { flex: 1, marginRight: scaleSizeW(8) },
+  progressBar: { height: scaleSizeH(3), borderRadius: scaleSizeH(2), marginVertical: scaleSizeH(4), overflow: 'hidden' },
+  progressInner: { height: '100%' },
+  taskActions: { flexDirection: 'row', alignItems: 'center' },
+  taskBtn: { paddingHorizontal: scaleSizeW(8), paddingVertical: scaleSizeH(4) },
+  localItem: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(9), borderBottomWidth: StyleSheet.hairlineWidth },
+  divider: { height: StyleSheet.hairlineWidth, marginTop: scaleSizeH(4) },
+  sectionTitle: { paddingHorizontal: scaleSizeW(12), paddingVertical: scaleSizeH(8) },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: scaleSizeH(24) },
 })

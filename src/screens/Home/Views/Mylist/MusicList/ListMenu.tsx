@@ -7,6 +7,7 @@ import { hasMusicUrlByMusic } from '@/utils/data'
 import settingState from '@/store/setting/state'
 import { requestStoragePermission, toast } from '@/utils/tools'
 import { action as downloadAction } from '@/store/download'
+import DownloadSettingModal, { type DownloadSettingModalRefType } from '@/components/DownloadSettingModal'
 
 export interface SelectInfo {
   musicInfo: LX.Music.MusicInfo
@@ -52,6 +53,8 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
   const menuRef = useRef<MenuType>(null)
   const selectInfoRef = useRef<SelectInfo>(initSelectInfo as SelectInfo)
   const [menus, setMenus] = useState<Menus>([])
+  const downloadModalRef = useRef<DownloadSettingModalRefType>(null)
+  const pendingDownloadRef = useRef<LX.Music.MusicInfoOnline[]>([])
 
   useImperativeHandle(ref, () => ({
     show(selectInfo, position) {
@@ -122,8 +125,13 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
           const granted = await requestStoragePermission()
           if (granted === false) toast('未授予存储权限，可能无法保存文件')
           else if (granted === null) toast('存储权限被永久拒绝，请到系统设置中开启')
-          if (selectInfo.single) downloadAction.addTask(selectInfo.musicInfo as LX.Music.MusicInfoOnline, quality)
-          else selectInfo.selectedList.forEach(m => downloadAction.addTask(m as LX.Music.MusicInfoOnline, quality))
+          pendingDownloadRef.current = (selectInfo.single
+            ? [selectInfo.musicInfo]
+            : selectInfo.selectedList) as LX.Music.MusicInfoOnline[]
+          downloadModalRef.current?.show({
+            quality,
+            title: selectInfo.single ? undefined : t('download_unified_setting'),
+          })
         })()
         break
       case 'add':
@@ -173,8 +181,22 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
   }
 
   return (
-    visible
-      ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} />
-      : null
+    <>
+      {visible
+        ? <Menu ref={menuRef} menus={menus} onPress={handleMenuPress} />
+        : null}
+      <DownloadSettingModal
+        ref={downloadModalRef}
+        onConfirm={(quality, downloadPic, downloadLyric) => {
+          const list = pendingDownloadRef.current
+          pendingDownloadRef.current = []
+          let added = 0
+          for (const m of list) {
+            if (downloadAction.addTask(m, quality, { downloadPic, downloadLyric })) added++
+          }
+          if (list.length > 1) toast(`已加入 ${added} 首到下载列表`)
+        }}
+      />
+    </>
   )
 })

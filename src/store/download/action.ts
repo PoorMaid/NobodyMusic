@@ -1,5 +1,8 @@
-import { getMusicUrl } from '@/core/music/online'
-import { downloadFile, downloadToPublic, stopDownload, existsFile, mkdir, isPublicStoragePath, externalStorageDirectoryPath } from '@/utils/fs'
+import { getMusicUrl, getPicUrl, getLyricInfo } from '@/core/music/online'
+import { downloadFile, downloadToPublic, stopDownload, existsFile, mkdir, isPublicStoragePath, externalStorageDirectoryPath, unlink } from '@/utils/fs'
+import { TEMP_FILE_PATH } from '@/utils/tools'
+import { writePic, writeLyric } from '@/utils/localMediaMetadata'
+import { log } from '@/utils/log'
 import settingState from '@/store/setting/state'
 import state, { type DownloadTask, type InitState } from './state'
 
@@ -60,6 +63,35 @@ const dlOptions = (task: DownloadTask) => ({
   },
 })
 
+const writeTags = async(task: DownloadTask) => {
+  const filePath = task.filePath
+  if (!filePath || /\.ogg$/i.test(filePath)) return
+  if (task.downloadPic) {
+    let picPath = ''
+    try {
+      const url = await getPicUrl({ musicInfo: task.musicInfo, isRefresh: true })
+      if (url) {
+        picPath = `${TEMP_FILE_PATH}/cover_${Date.now()}.jpg`
+        const res = await downloadFile(url, picPath).promise
+        if (res.statusCode && res.statusCode >= 400) throw new Error('pic http ' + res.statusCode)
+        await writePic(filePath, picPath)
+      }
+    } catch (err: any) {
+      log.error('Write pic failed: ' + String(err?.message || err))
+    } finally {
+      if (picPath) void unlink(picPath).catch(() => {})
+    }
+  }
+  if (task.downloadLyric) {
+    try {
+      const lyricInfo = await getLyricInfo({ musicInfo: task.musicInfo, isRefresh: true })
+      const lyric = [lyricInfo.lyric, lyricInfo.tlyric].filter(Boolean).join('\n')
+      if (lyric) await writeLyric(filePath, lyric)
+    } catch (err: any) {
+      log.error('Write lyric failed: ' + String(err?.message || err))
+    }
+  }
+}
 const startTask = async(task: DownloadTask) => {
   task.jobId = null
   updateTask(task, { status: 'run', statusText: '下载中', progress: 0, speed: '0 B/s' })
@@ -84,6 +116,7 @@ const startTask = async(task: DownloadTask) => {
     const res = await dl.promise
     if (res.statusCode && res.statusCode >= 400) throw new Error('http ' + res.statusCode)
     updateTask(task, { status: 'completed', statusText: '已完成', progress: 100, speed: '' })
+    void writeTags(task)
   } catch (err: any) {
     updateTask(task, { status: 'error', statusText: String(err?.message || err), speed: '' })
   } finally {
@@ -103,7 +136,7 @@ const runQueue = async() => {
   }
 }
 
-export const addTask = (musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality) => {
+export const addTask = (musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality, options?: { downloadPic?: boolean, downloadLyric?: boolean }) => {
   const exist = state.tasks.find(t => t.musicInfo.id == musicInfo.id && t.quality == quality && t.status == 'completed')
   if (exist) return false
   const ext = getExtByQuality(quality)
@@ -122,6 +155,8 @@ export const addTask = (musicInfo: LX.Music.MusicInfoOnline, quality: LX.Quality
     speed: '',
     jobId: null,
     startAt: Date.now(),
+    downloadPic: options?.downloadPic === true,
+    downloadLyric: options?.downloadLyric === true,
   }
   state.tasks.push(task)
   emitUpdate()
