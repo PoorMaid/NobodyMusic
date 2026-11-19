@@ -99,6 +99,32 @@ export const requestStoragePermission = async() => {
 
 
 /**
+ * 统一的存储权限前置检查：已授权直接返回 true，否则先弹提示、再发起申请
+ * @param message 自定义提示文案，不传则用默认语句
+ * @returns true 表示已获得权限，可继续执行
+ */
+export const ensureStoragePermission = async(message?: string) => {
+  if (await checkStoragePermissions()) return true
+  const agree = await confirmDialog({
+    message: message ?? global.i18n.t('storage_permission_tip_request'),
+    bgClose: false,
+  })
+  if (!agree) {
+    toast(global.i18n.t('disagree_tip'), 'long')
+    return false
+  }
+  const result = await requestStoragePermission()
+  if (result == null) {
+    void confirmDialog({ message: global.i18n.t('storage_permission_tip_disagree_ask_again'), bgClose: false })
+    return false
+  }
+  if (!result) {
+    toast(global.i18n.t('storage_permission_tip_disagree'), 'long')
+    return false
+  }
+  return true
+}
+/**
  * 显示toast
  * @param message 消息
  * @param duration 时长

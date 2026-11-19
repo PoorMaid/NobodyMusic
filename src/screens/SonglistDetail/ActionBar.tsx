@@ -2,7 +2,7 @@ import { memo, useRef } from 'react'
 import { View } from 'react-native'
 import Button from '@/components/common/Button'
 
-import { createStyle, toast } from '@/utils/tools'
+import { createStyle, toast, ensureStoragePermission } from '@/utils/tools'
 import { pop } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
 import commonState from '@/store/common/state'
@@ -41,6 +41,8 @@ export default memo(() => {
     const handleDownloadAll = () => {
     if (!songlistState.listDetailInfo.info.name) return
     void (async() => {
+      const granted = await ensureStoragePermission()
+      if (!granted) return
       const list = await getListDetailAll(info.source, info.id)
       if (!list.length) {
         toast('没有可下载的歌曲')

@@ -14,6 +14,7 @@ import Loading from '@/components/common/Loading'
 import { playListById } from '@/core/player/player'
 import ChoosePath from '@/components/common/ChoosePath'
 import { handleImportMediaFile } from '@/screens/Home/Views/Mylist/MyList/listAction'
+import { ensureStoragePermission } from '@/utils/tools'
 
 const { getDownloadDir } = downloadAction
 
@@ -194,14 +195,20 @@ export default memo(() => {
       })
       return
     }
-    void handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('download_tab_downloaded') }, getDownloadDir()).then(loadLocal)
+    void ensureStoragePermission().then(granted => {
+      if (!granted) return
+      return handleImportMediaFile({ id: LIST_IDS.DOWNLOAD, name: t('download_tab_downloaded') }, getDownloadDir()).then(loadLocal)
+    })
   }, [t, isLocalTab, loadLocal])
 
   const handleScanPath = useCallback(path => {
     const target = isInDownloadDir(path, getDownloadDir())
       ? { id: LIST_IDS.DOWNLOAD, name: t('download_tab_downloaded') }
       : { id: LIST_IDS.LOCAL, name: t('nav_local_music') }
-    void handleImportMediaFile(target, path).then(loadLocal)
+    void ensureStoragePermission().then(granted => {
+      if (!granted) return
+      return handleImportMediaFile(target, path).then(loadLocal)
+    })
   }, [loadLocal, t])
 
   const activeLocalList = filter === 'downloaded' ? localList : allLocalList
