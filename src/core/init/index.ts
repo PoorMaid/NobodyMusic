@@ -48,14 +48,20 @@ export default async() => {
 
   await initUserApi(setting)
   bootLog('User Api inited.')
+  // Nobody Music: 启动即标记“加载中”，避免首屏误显示“初始化失败/未初始化”
+  userApiState.status.status = false
+  userApiState.status.message = 'initing'
 
   // Nobody Music: 启动时先落定一个生效音源，避免 UI 全部未勾选
   // 已保存音源优先，其次用户/内置音源列表首项；探测挑选交给后台 autoPick
   const savedApiSource = setting['common.apiSource']
   const fallbackApiSource = userApiState.list[0]?.id
   const targetApiSource = savedApiSource || fallbackApiSource
-  if (targetApiSource && settingState.setting['common.apiSource'] !== targetApiSource) {
+  // Nobody Music: 无条件调用 setApiSource，保证 apiInitPromise 闸门每一轮启动都被真正建立
+  // 否则第二次启动沿用已保存音源时跳过调用，闸门停留在初值 false，导致永久“初始化中 / 播放不了”
+  if (targetApiSource) {
     setApiSource(targetApiSource)
+    bootLog('Api source applied: ' + targetApiSource)
   }
   bootLog('Api inited.')
 

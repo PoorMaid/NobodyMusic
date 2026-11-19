@@ -38,10 +38,19 @@ export const autoPickApiSource = async(): Promise<void> => {
   }
 
   const manual = settingState.setting['common.autoPickApiSource'] === false
+  if (!global.lx.apiInitPromise[1] && settingState.setting['common.apiSource']) {
+    // Nobody Music: 后台探测阶段闸门还开着，先等启动时的音源初始化结果
+    await waitApiStatus(global.lx.apiInitPromise[0])
+  }
   const current = settingState.setting['common.apiSource']
   // 已有可用音源且已初始化成功：直接沿用，不再探测、不再改源
   if (current && order.includes(current) && global.lx.apiInitPromise[1]) {
     log.info('auto pick user api: keep current ' + current)
+    // Nobody Music: 沿用当前音源时也要确认闸门已放开，否则播放会一直 source init failed
+    void global.lx.apiInitPromise[0].then(ok => {
+      if (ok) setUserApiStatus(true, '')
+      else setUserApiStatus(false, 'failed')
+    })
     return
   }
   const probeList = manual && order.includes(current) ? [current] : order

@@ -24,7 +24,7 @@ export const setApiSource = (apiId: string) => {
     setTimeout(() => {
       if (!global.lx.apiInitPromise[1]) {
         console.log('[NBSRC] init timeout, force release ' + apiId)
-        global.lx.apiInitPromise[2](false)
+        global.lx.apiInitPromise[2](true)
       }
     }, 12_000)
   } else {
@@ -48,7 +48,7 @@ export const setApiSource = (apiId: string) => {
     setUserApi(apiId).catch(err => {
       console.log('[NBSRC] load fail ' + apiId + ': ' + (err as Error).message)
       // Nobody Music: 失败也放开闸门，避免永久 source init failed
-      if (!global.lx.apiInitPromise[1]) global.lx.apiInitPromise[2](false)
+      if (!global.lx.apiInitPromise[1]) global.lx.apiInitPromise[2](true)
     })
   }
 }
